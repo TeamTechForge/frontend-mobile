@@ -237,6 +237,15 @@ export const deleteCommunityComment = async (
     };
 };
 
+export const updateCommunityComment = async (
+    postId: string,
+    commentId: string,
+    content: string
+): Promise<CommunityComment> => {
+    const response = await api.put<any>(`/api/community/${postId}/comments/${commentId}`, { content });
+    return response.data?.data ?? response.data;
+};
+
 // ─── Report Community Post ────────────────────────────────────────────────────
 
 export const reportCommunityPost = async (

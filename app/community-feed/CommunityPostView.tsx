@@ -21,6 +21,7 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -44,6 +45,7 @@ import {
   getCommunityComments,
   createCommunityComment,
   deleteCommunityComment,
+  updateCommunityComment,
   CommunityComment,
 } from "../../services/communityService";
 import ReportPostModal from "../../components/ReportPostModal";
@@ -111,6 +113,9 @@ export default function CommunityPostView() {
     commentId: string;
     username: string;
   } | null>(null);
+  const [editingComment, setEditingComment] = useState<CommunityComment | null>(null);
+  const [commentActionTarget, setCommentActionTarget] = useState<CommunityComment | null>(null);
+  const [deleteCommentTargetId, setDeleteCommentTargetId] = useState<string | null>(null);
 
   const inputRef = useRef<TextInput | null>(null);
   const scrollViewRef = useRef<ScrollView | null>(null);
@@ -279,6 +284,15 @@ export default function CommunityPostView() {
 
     try {
       setSubmittingComment(true);
+      if (editingComment) {
+        const updated = await updateCommunityComment(id, editingComment._id, trimmed);
+        setComments((prev) =>
+          prev.map((comment) => comment._id === updated._id ? updated : comment)
+        );
+        setCommentText("");
+        setEditingComment(null);
+        return;
+      }
       const parentId = replyingTo ? replyingTo.commentId : null;
       const result = await createCommunityComment(id, trimmed, parentId);
       setComments((prev) => [...prev, result.comment]);
@@ -304,28 +318,28 @@ export default function CommunityPostView() {
   const canDeleteComment = (comment: CommunityComment) => {
     if (comment.canDelete) return true;
     if (post?.isOwner) return true;
-    if (user?._id && comment.userId === user._id) return true;
+    if (user?._id && String(comment.userId) === String(user._id)) return true;
     return false;
   };
 
-  const handleCommentLongPress = (comment: CommunityComment) => {
-    if (!canDeleteComment(comment)) {
-      handleStartReply(comment);
-      return;
-    }
+  const isCommentAuthor = (comment: CommunityComment) =>
+    Boolean(user?._id && String(comment.userId) === String(user._id));
 
-    Alert.alert(
-      "Delete comment?",
-      "Are you sure you want to delete this comment? This will also remove any replies.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => void executeDeleteComment(comment._id),
-        },
-      ]
-    );
+  const startEditingComment = (comment: CommunityComment) => {
+    setReplyingTo(null);
+    setEditingComment(comment);
+    setCommentText(comment.content);
+    inputRef.current?.focus();
+  };
+
+  const handleCommentLongPress = (comment: CommunityComment) => {
+    if (!isCommentAuthor(comment) && !canDeleteComment(comment)) return;
+    setCommentActionTarget(comment);
+  };
+
+  const confirmDeleteComment = (commentId: string) => {
+    setCommentActionTarget(null);
+    setDeleteCommentTargetId(commentId);
   };
 
   const executeDeleteComment = async (commentId: string) => {
@@ -651,8 +665,6 @@ export default function CommunityPostView() {
                 <View style={styles.commentsList}>
                   {rootComments.map((comment) => {
                     const replies = getReplies(comment._id);
-                    const isDeletable = canDeleteComment(comment);
-
                     return (
                       <View key={comment._id} style={styles.commentBlock}>
                         {/* Parent Comment */}
@@ -693,7 +705,13 @@ export default function CommunityPostView() {
                                 {formatCommentDate(comment.createdAt)}
                               </Text>
                             </View>
-                            <Text style={styles.commentText}>{comment.content}</Text>
+                            <Text
+                              style={styles.commentText}
+                              onLongPress={() => handleCommentLongPress(comment)}
+                              suppressHighlighting
+                            >
+                              {comment.content}
+                            </Text>
                             
                             <View style={styles.commentFooterRow}>
                               <TouchableOpacity
@@ -705,15 +723,6 @@ export default function CommunityPostView() {
                                 <Text style={styles.replyActionText}>Reply</Text>
                               </TouchableOpacity>
 
-                              {isDeletable && (
-                                <TouchableOpacity
-                                  style={styles.deleteActionBtn}
-                                  onPress={() => handleCommentLongPress(comment)}
-                                  hitSlop={6}
-                                >
-                                  <Ionicons name="trash-outline" size={13} color="#D32F2F" />
-                                </TouchableOpacity>
-                              )}
                             </View>
                           </View>
                         </TouchableOpacity>
@@ -722,8 +731,6 @@ export default function CommunityPostView() {
                         {replies.length > 0 && (
                           <View style={styles.repliesWrapper}>
                             {replies.map((reply) => {
-                              const isReplyDeletable = canDeleteComment(reply);
-
                               return (
                                 <TouchableOpacity
                                   key={reply._id}
@@ -763,7 +770,13 @@ export default function CommunityPostView() {
                                         {formatCommentDate(reply.createdAt)}
                                       </Text>
                                     </View>
-                                    <Text style={styles.replyText}>{reply.content}</Text>
+                                    <Text
+                                      style={styles.replyText}
+                                      onLongPress={() => handleCommentLongPress(reply)}
+                                      suppressHighlighting
+                                    >
+                                      {reply.content}
+                                    </Text>
 
                                     <View style={styles.commentFooterRow}>
                                       <TouchableOpacity
@@ -775,15 +788,6 @@ export default function CommunityPostView() {
                                         <Text style={styles.replyActionText}>Reply</Text>
                                       </TouchableOpacity>
 
-                                      {isReplyDeletable && (
-                                        <TouchableOpacity
-                                          style={styles.deleteActionBtn}
-                                          onPress={() => handleCommentLongPress(reply)}
-                                          hitSlop={6}
-                                        >
-                                          <Ionicons name="trash-outline" size={13} color="#D32F2F" />
-                                        </TouchableOpacity>
-                                      )}
                                     </View>
                                   </View>
                                 </TouchableOpacity>
@@ -821,16 +825,20 @@ export default function CommunityPostView() {
         {/* ── DOCKED BOTTOM COMPOSER ── */}
         {!loading && !error && post && (
           <View style={styles.bottomComposerContainer}>
-            {replyingTo && (
+            {(replyingTo || editingComment) && (
               <View style={styles.replyingBar}>
                 <View style={styles.replyingLeftGroup}>
-                  <Ionicons name="return-down-forward" size={14} color="#8B5E00" />
+                  <Ionicons name={editingComment ? "create-outline" : "return-down-forward"} size={14} color="#8B5E00" />
                   <Text style={styles.replyingText}>
-                    Replying to <Text style={styles.replyingUsername}>@{replyingTo.username}</Text>
+                    {editingComment ? "Editing your comment" : <>Replying to <Text style={styles.replyingUsername}>@{replyingTo?.username}</Text></>}
                   </Text>
                 </View>
                 <TouchableOpacity
-                  onPress={() => setReplyingTo(null)}
+                  onPress={() => {
+                    setReplyingTo(null);
+                    setEditingComment(null);
+                    setCommentText("");
+                  }}
                   hitSlop={8}
                 >
                   <Ionicons name="close-circle" size={18} color="#8A7E6C" />
@@ -843,7 +851,9 @@ export default function CommunityPostView() {
                 ref={inputRef}
                 style={styles.commentInput}
                 placeholder={
-                  replyingTo
+                  editingComment
+                    ? "Edit your comment…"
+                    : replyingTo
                     ? `Reply to @${replyingTo.username}…`
                     : "Write a comment…"
                 }
@@ -880,6 +890,88 @@ export default function CommunityPostView() {
             if (post) await reportCommunityPost(post._id, reason);
           }}
         />
+
+        <Modal
+          transparent
+          animationType="fade"
+          visible={Boolean(commentActionTarget)}
+          onRequestClose={() => setCommentActionTarget(null)}
+        >
+          <TouchableOpacity
+            style={styles.commentModalBackdrop}
+            activeOpacity={1}
+            onPress={() => setCommentActionTarget(null)}
+          >
+            <TouchableOpacity activeOpacity={1} style={styles.commentModalCard}>
+              <Text style={styles.commentModalTitle}>Comment actions</Text>
+              <Text style={styles.commentModalMessage}>Choose an action for this comment.</Text>
+
+              {commentActionTarget && isCommentAuthor(commentActionTarget) && (
+                <TouchableOpacity
+                  style={styles.commentModalEditButton}
+                  onPress={() => {
+                    const target = commentActionTarget;
+                    setCommentActionTarget(null);
+                    startEditingComment(target);
+                  }}
+                >
+                  <Ionicons name="create-outline" size={19} color="#7A4A00" />
+                  <Text style={styles.commentModalEditText}>Edit comment</Text>
+                </TouchableOpacity>
+              )}
+
+              {commentActionTarget && canDeleteComment(commentActionTarget) && (
+                <TouchableOpacity
+                  style={styles.commentModalDeleteButton}
+                  onPress={() => confirmDeleteComment(commentActionTarget._id)}
+                >
+                  <Ionicons name="trash-outline" size={19} color="#FFFFFF" />
+                  <Text style={styles.commentModalDeleteText}>Delete comment</Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={styles.commentModalCancelButton}
+                onPress={() => setCommentActionTarget(null)}
+              >
+                <Text style={styles.commentModalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
+
+        <Modal
+          transparent
+          animationType="fade"
+          visible={Boolean(deleteCommentTargetId)}
+          onRequestClose={() => setDeleteCommentTargetId(null)}
+        >
+          <View style={styles.commentModalBackdrop}>
+            <View style={styles.commentModalCard}>
+              <Text style={styles.commentModalTitle}>Delete comment?</Text>
+              <Text style={styles.commentModalMessage}>
+                This will also remove any replies to this comment.
+              </Text>
+              <TouchableOpacity
+                style={styles.commentModalDeleteButton}
+                onPress={() => {
+                  const commentId = deleteCommentTargetId;
+                  setDeleteCommentTargetId(null);
+                  if (commentId) void executeDeleteComment(commentId);
+                }}
+              >
+                <Ionicons name="trash-outline" size={19} color="#FFFFFF" />
+                <Text style={styles.commentModalDeleteText}>Delete comment</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.commentModalCancelButton}
+                onPress={() => setDeleteCommentTargetId(null)}
+              >
+                <Text style={styles.commentModalCancelText}>Keep comment</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -1503,5 +1595,89 @@ const styles = StyleSheet.create({
 
   sendBtnDisabled: {
     opacity: 0.4,
+  },
+
+  commentModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.48)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+
+  commentModalCard: {
+    width: "100%",
+    maxWidth: 360,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 20,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+
+  commentModalTitle: {
+    color: "#161C27",
+    fontSize: 19,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+
+  commentModalMessage: {
+    color: "#6F685E",
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+    marginTop: 6,
+    marginBottom: 18,
+  },
+
+  commentModalEditButton: {
+    minHeight: 48,
+    borderRadius: 12,
+    backgroundColor: "#FFE0A3",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
+
+  commentModalEditText: {
+    color: "#7A4A00",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  commentModalDeleteButton: {
+    minHeight: 48,
+    borderRadius: 12,
+    backgroundColor: "#C62828",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
+
+  commentModalDeleteText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  commentModalCancelButton: {
+    minHeight: 44,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  commentModalCancelText: {
+    color: "#514B43",
+    fontSize: 15,
+    fontWeight: "600",
   },
 });
