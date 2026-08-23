@@ -1,12 +1,10 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Image,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,16 +14,10 @@ import {
 } from "react-native";
 import { getAllPosts, Post, toggleLikePost } from "../../services/adoptionService";
 import { useAuth } from "../../contexts/AuthContext";
-import PrimaryButton from "../../components/PrimaryButton";
-import { ANIMAL_BREEDS } from "../../constants/breeds.constants";
 
 // ─── Filters ──────────────────────────────────────────────────────────────────
 
 const FILTERS = ["All", "Favorites", "Dogs", "Cats", "Rabbits", "Birds"];
-const ANIMAL_TYPES = ["Dog", "Cat", "Other"];
-const GENDERS = ["Male", "Female"];
-const AGE_RANGES = ["Any age", "Below 6 months", "6–12 months", "1–3 years", "3–7 years", "Above 7 years"];
-const HEALTH_STATUSES = ["Healthy", "Needs Care", "Under Treatment", "Special Needs"];
 type AdvancedFilters = { animalType: string; otherAnimalType: string; gender: string; breed: string; customBreed: string; ageRange: string; healthStatus: string; location: string };
 const EMPTY_FILTERS: AdvancedFilters = { animalType: "", otherAnimalType: "", gender: "", breed: "", customBreed: "", ageRange: "Any age", healthStatus: "", location: "" };
 
@@ -110,6 +102,7 @@ function PetCard({
 
 export default function AdoptionPostMain() {
   const router = useRouter();
+  const { filters: filtersParam } = useLocalSearchParams<{ filters?: string | string[] }>();
   const { user } = useAuth();
 
   const [posts, setPosts] = useState<(Post & { liked: boolean })[]>([]);
@@ -117,11 +110,18 @@ export default function AdoptionPostMain() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
-  const [showFilters, setShowFilters] = useState(false);
-  const [draftFilters, setDraftFilters] = useState<AdvancedFilters>(EMPTY_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState<AdvancedFilters>(EMPTY_FILTERS);
-  const [openFilter, setOpenFilter] = useState<keyof AdvancedFilters | null>(null);
-  const filterScrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    const serializedFilters = Array.isArray(filtersParam) ? filtersParam[0] : filtersParam;
+    if (!serializedFilters) return;
+
+    try {
+      setAppliedFilters({ ...EMPTY_FILTERS, ...JSON.parse(serializedFilters) });
+    } catch {
+      setAppliedFilters(EMPTY_FILTERS);
+    }
+  }, [filtersParam]);
 
   // ── Fetch posts from backend ──────────────────────────────────────────────
 
@@ -217,19 +217,6 @@ export default function AdoptionPostMain() {
   });
 
   const hasAdvancedFilters = Boolean(appliedFilters.animalType || appliedFilters.otherAnimalType || appliedFilters.gender || appliedFilters.breed || appliedFilters.customBreed || appliedFilters.healthStatus || appliedFilters.location || appliedFilters.ageRange !== "Any age");
-  const availableBreeds = draftFilters.animalType === "Dog"
-    ? ANIMAL_BREEDS.Dog.filter((breed) => breed !== "Unknown Breed")
-    : draftFilters.animalType === "Cat"
-      ? ANIMAL_BREEDS.Cat.filter((breed) => breed !== "Unknown")
-      : [];
-  const filterFields: { key: keyof AdvancedFilters; label: string; options: string[] }[] = [
-    { key: "animalType", label: "Animal type", options: ANIMAL_TYPES },
-    { key: "gender", label: "Gender", options: GENDERS },
-    ...(draftFilters.animalType !== "Other" ? [{ key: "breed" as keyof AdvancedFilters, label: "Breed", options: availableBreeds }] : []),
-    { key: "ageRange", label: "Age", options: AGE_RANGES },
-    { key: "healthStatus", label: "Health status", options: HEALTH_STATUSES },
-  ];
-
   // ── Loading state ─────────────────────────────────────────────────────────
 
   if (loading) {
@@ -258,7 +245,7 @@ export default function AdoptionPostMain() {
   // ── Main render ───────────────────────────────────────────────────────────
 
   return (
-    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 12}>
+    <View style={styles.screen}>
       {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -298,55 +285,14 @@ export default function AdoptionPostMain() {
             onChangeText={setSearch}
           />
         </View>
-        <TouchableOpacity style={[styles.filterButton, (showFilters || hasAdvancedFilters) && styles.filterButtonActive]} onPress={() => setShowFilters((value) => !value)} accessibilityLabel="Open adoption filters">
-          <MaterialIcons name="tune" size={22} color={(showFilters || hasAdvancedFilters) ? "#FFFFFF" : "#D48806"} />
+        <TouchableOpacity
+          style={[styles.filterButton, hasAdvancedFilters && styles.filterButtonActive]}
+          onPress={() => router.push({ pathname: "/adoption-corner/AdoptionFilter", params: { filters: JSON.stringify(appliedFilters) } })}
+          accessibilityLabel="Open adoption filters"
+        >
+          <MaterialIcons name="tune" size={22} color={hasAdvancedFilters ? "#FFFFFF" : "#D48806"} />
         </TouchableOpacity>
       </View>
-
-      {showFilters && (
-        <ScrollView ref={filterScrollRef} style={styles.filterPanel} contentContainerStyle={styles.filterPanelContent} keyboardShouldPersistTaps="handled" nestedScrollEnabled showsVerticalScrollIndicator={false}>
-          {filterFields.map(({ key, label, options }) => (
-            <View key={key} style={styles.filterGroup}>
-              <Text style={styles.filterLabel}>{label}</Text>
-              <TouchableOpacity disabled={key === "breed" && (!draftFilters.animalType || draftFilters.animalType === "Other")} style={[styles.filterSelect, key === "breed" && (!draftFilters.animalType || draftFilters.animalType === "Other") && styles.filterSelectDisabled]} onPress={() => setOpenFilter((current) => current === key ? null : key)}>
-                <Text style={draftFilters[key] ? styles.filterSelectText : styles.filterPlaceholder}>{draftFilters[key] || (key === "breed" && !draftFilters.animalType ? "Select animal type first" : key === "breed" && draftFilters.animalType === "Other" ? "Not applicable for Other" : `Select ${label.toLowerCase()}`)}</Text>
-                <Ionicons name={openFilter === key ? "chevron-up" : "chevron-down"} size={17} color="#717878" />
-              </TouchableOpacity>
-              {openFilter === key && (
-                <ScrollView style={styles.filterDropdown} nestedScrollEnabled>
-                  {options.map((option) => (
-                    <TouchableOpacity key={option} style={[styles.filterDropdownItem, draftFilters[key] === option && styles.filterDropdownItemActive]} onPress={() => { setDraftFilters((current) => key === "animalType" ? { ...current, animalType: option, breed: "", customBreed: "", otherAnimalType: "" } : key === "breed" ? { ...current, breed: option, customBreed: "" } : { ...current, [key]: option }); setOpenFilter(null); }}>
-                      <Text style={styles.filterDropdownText}>{option}</Text>
-                      {draftFilters[key] === option && <Ionicons name="checkmark" size={17} color="#D48806" />}
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              )}
-              {key === "animalType" && draftFilters.animalType === "Other" && (
-                <View style={styles.inlineConditionalField}>
-                  <Text style={styles.filterLabel}>Specify animal type</Text>
-                  <TextInput style={styles.locationFilterInput} placeholder="e.g. Rabbit, Bird or Turtle" placeholderTextColor="#A8A497" value={draftFilters.otherAnimalType} onChangeText={(otherAnimalType) => setDraftFilters((current) => ({ ...current, otherAnimalType }))} />
-                </View>
-              )}
-              {key === "breed" && draftFilters.breed === "Other" && (
-                <View style={styles.inlineConditionalField}>
-                  <Text style={styles.filterLabel}>Specify breed</Text>
-                  <TextInput style={styles.locationFilterInput} placeholder="Type the breed" placeholderTextColor="#A8A497" value={draftFilters.customBreed} onChangeText={(customBreed) => setDraftFilters((current) => ({ ...current, customBreed }))} />
-                  {!draftFilters.customBreed.trim() && <Text style={styles.filterHelp}>Enter a breed to apply this filter.</Text>}
-                </View>
-              )}
-            </View>
-          ))}
-          <View style={styles.filterGroup}>
-            <Text style={styles.filterLabel}>Location</Text>
-            <TextInput style={styles.locationFilterInput} placeholder="Type a city or area" placeholderTextColor="#A8A497" value={draftFilters.location} onFocus={() => setTimeout(() => filterScrollRef.current?.scrollToEnd({ animated: true }), 250)} onChangeText={(location) => setDraftFilters((current) => ({ ...current, location }))} />
-          </View>
-          <View style={styles.filterActions}>
-            <View style={styles.filterAction}><PrimaryButton title="Clear" variant="outline" onPress={() => { setDraftFilters(EMPTY_FILTERS); setAppliedFilters(EMPTY_FILTERS); setOpenFilter(null); }} /></View>
-            <View style={styles.filterAction}><PrimaryButton title="Apply" disabled={draftFilters.breed === "Other" && !draftFilters.customBreed.trim()} onPress={() => { setAppliedFilters(draftFilters); setShowFilters(false); setOpenFilter(null); }} /></View>
-          </View>
-        </ScrollView>
-      )}
 
       {/* ── Filter Chips ── */}
       <View style={styles.chipsScrollWrapper}>
@@ -421,7 +367,7 @@ export default function AdoptionPostMain() {
           </View>
         )}
       />
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

@@ -24,6 +24,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import CommunityPostCard from "../../components/CommunityPostCard";
 import BackButton from "../../components/BackButton";
+import {
+  COMMUNITY_POST_CATEGORIES,
+  type CommunityPostCategory,
+} from "../../utils/communityPost.utils";
 
 import {
   CommunityPost,
@@ -58,16 +62,6 @@ const C = {
 // ─────────────────────────────────────────────
 // CATEGORIES
 // ─────────────────────────────────────────────
-
-const CATEGORIES = [
-  "Pet Care Tips",
-  "Health & First Aid",
-  "Stray Animal Help",
-  "Training & Behavior",
-  "Animal Welfare & Rights Awareness",
-  "Success Stories",
-  "Events & Campaigns",
-];
 
 // ─────────────────────────────────────────────
 // COMMUNITY FEED SCREEN
@@ -240,6 +234,12 @@ export default function CommunityPostMain() {
       await reportCommunityPost(
         postId,
         reason
+      );
+
+      setPosts((currentPosts) =>
+        currentPosts.map((post) =>
+          post._id === postId ? { ...post, isReported: true } : post
+        )
       );
 
       console.log(
@@ -422,8 +422,8 @@ export default function CommunityPostMain() {
 
             {/* OTHER CATEGORIES */}
 
-            {CATEGORIES.map(
-              (category) => {
+            {COMMUNITY_POST_CATEGORIES.map(
+              (category: CommunityPostCategory) => {
                 const isActive =
                   activeCategory ===
                   category;
