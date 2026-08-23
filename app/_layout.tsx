@@ -28,13 +28,12 @@ function InitialLayout() {
   const [hasCheckedCompletion, setHasCheckedCompletion] = useState(false);
   const handledNotificationIdsRef = useRef<Set<string>>(new Set());
 
-  // Check if newly approved NGOs/Vets need to see the completion screen
+  // Check if newly approved NGOs/Vets need to be marked as having seen the completion screen
   useEffect(() => {
     if (user && (user.role === "ngo" || user.role === "vet") && user.profileStatus === "Verified") {
       SecureStore.getItemAsync(`seenCompletion_${user._id}`).then((seen) => {
         if (!seen) {
           SecureStore.setItemAsync(`seenCompletion_${user._id}`, "true");
-          router.replace("/auth/CompletedProfileSetup");
         }
         setHasCheckedCompletion(true);
       });

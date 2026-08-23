@@ -110,7 +110,9 @@ export function AlertProvider({ children }: AlertProviderProps) {
       combined.includes("complete") ||
       combined.includes("published") ||
       combined.includes("uploaded") ||
-      combined.includes("saved")
+      combined.includes("saved") ||
+      combined.includes("approved") ||
+      combined.includes("verified")
     ) {
       return {
         icon: "checkmark-circle-outline" as const,
