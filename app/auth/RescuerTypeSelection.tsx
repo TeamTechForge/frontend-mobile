@@ -150,7 +150,7 @@ export default function RescuerTypeScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.cardTitle}>NGO / Shelter Organization</Text>
                 <Text style={styles.cardDesc}>
-                  Manage rescues, shelters, and adoption coordination.
+                  Coordinate rescues and manage animal shelters.
                 </Text>
               </View>
 
@@ -175,7 +175,7 @@ export default function RescuerTypeScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.cardTitle}>Veterinarian</Text>
                 <Text style={styles.cardDesc}>
-                  Provide medical treatment and health updates.
+                  Provide medical care and treatments for animals in need.
                 </Text>
               </View>
 

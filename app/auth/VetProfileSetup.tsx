@@ -298,6 +298,9 @@ export default function VetProfileSetupScreen() {
     if (!yearsOfExperience.trim()) {
       newErrors.yearsOfExperience = "Years of experience is required";
       valid = false;
+    } else if (isNaN(Number(yearsOfExperience.trim())) || Number(yearsOfExperience.trim()) < 0 || Number(yearsOfExperience.trim()) > 100) {
+      newErrors.yearsOfExperience = "Must be a valid number";
+      valid = false;
     }
 
     if (!licenseDocument) {

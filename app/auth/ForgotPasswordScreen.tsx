@@ -24,6 +24,7 @@ export default function ForgotPasswordScreen() {
   const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Send reset code to the user's email
   const handleRequestReset = async () => {
     if (!email) {
       Alert.alert("Please enter your email");
@@ -53,6 +54,7 @@ export default function ForgotPasswordScreen() {
     }
   };
 
+  // Reset the password using the verification code
   const handlePasswordReset = async () => {
     if (!token || !newPassword) {
       Alert.alert("Please enter both the 6-digit code and a new password");
@@ -86,7 +88,7 @@ export default function ForgotPasswordScreen() {
   return (
     <View style={styles.container}>
 
-      {/* 🔙 Header */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color="#000" />
@@ -94,15 +96,15 @@ export default function ForgotPasswordScreen() {
         <Text style={styles.headerTitle}>Forgot Password</Text>
       </View>
 
-      {/* 🔒 Icon */}
+      {/* Icon */}
       <View style={styles.iconContainer}>
         <Ionicons name={step === 1 ? "lock-closed" : "key"} size={40} color={BRAND_COLOR} />
       </View>
 
-      {/* 📝 Title */}
+      {/* Title */}
       <Text style={styles.title}>{step === 1 ? "Forgot Password?" : "Reset Password"}</Text>
 
-      {/* 📄 Description */}
+      {/* Description */}
       <Text style={styles.description}>
         {step === 1
           ? "No worries! Enter the email address associated with your StrayCare account and we'll send you a 6-digit code to reset your password."
@@ -111,16 +113,16 @@ export default function ForgotPasswordScreen() {
 
       {step === 1 ? (
         <>
-          {/* 📧 Email Input */}
+          {/* Email Input */}
           <Text style={styles.label}>Email Address</Text>
           <InputField
-            placeholder="example@mail.com"
+            placeholder="example@gmail.com"
             value={email}
             onChangeText={setEmail}
             icon="mail-outline"
           />
 
-          {/* 🔘 Button */}
+          {/* Button */}
           <View style={{ marginTop: 20 }}>
             <PrimaryButton
               title={loading ? "Sending..." : "Send the 6-digit reset code"}
@@ -131,7 +133,7 @@ export default function ForgotPasswordScreen() {
         </>
       ) : (
         <>
-          {/* 🔑 Token Input */}
+          {/* Token Input */}
           <Text style={styles.label}>6-Digit Reset Code</Text>
           <InputField
             placeholder="123456"
@@ -141,7 +143,7 @@ export default function ForgotPasswordScreen() {
             keyboardType="numeric"
           />
 
-          {/* 🔒 New Password Input */}
+          {/* New Password Input */}
           <Text style={styles.label}>New Password</Text>
           <InputField
             placeholder="********"
@@ -151,7 +153,7 @@ export default function ForgotPasswordScreen() {
             icon="lock-closed-outline"
           />
 
-          {/* 🔘 Button */}
+          {/* Button */}
           <View style={{ marginTop: 20 }}>
             <PrimaryButton
               title={loading ? "Resetting..." : "Reset Password"}
@@ -170,7 +172,7 @@ export default function ForgotPasswordScreen() {
         </>
       )}
 
-      {/* 🔗 Login Redirect */}
+      {/*  Login Redirect */}
       <View style={styles.bottomTextContainer}>
         <Text style={styles.bottomText}>
           Remember your password?{" "}
@@ -183,7 +185,7 @@ export default function ForgotPasswordScreen() {
         </Text>
       </View>
 
-      {/* 🐾 Footer Icon */}
+      {/* Footer Icon */}
       <View style={styles.footer}>
         <Ionicons name="paw" size={50} color="#ddd" />
       </View>

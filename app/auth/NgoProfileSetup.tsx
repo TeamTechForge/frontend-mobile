@@ -255,6 +255,7 @@ export default function NgoProfileSetupScreen() {
     if (!contactPerson.trim()) { newErrors.contactPerson = "Contact person is required"; valid = false; }
     if (!regNumber.trim()) { newErrors.regNumber = "Registration number is required"; valid = false; }
     if (!year.trim()) { newErrors.year = "Founded year is required"; valid = false; }
+    else if (!/^\d{4}$/.test(year.trim()) || parseInt(year.trim(), 10) > new Date().getFullYear()) { newErrors.year = "Must be a valid 4-digit year"; valid = false; }
     if (!phone.trim()) { newErrors.phone = "Phone number is required"; valid = false; }
     else if (!/^[0-9]{10}$/.test(phone.trim())) { newErrors.phone = "Must be exactly 10 digits (e.g. 0771234567)"; valid = false; }
     if (!location.trim()) { newErrors.location = "Address is required"; valid = false; }

@@ -28,7 +28,7 @@ export default function ReporterProfileSetupScreen() {
   const router = useRouter();
   const { refreshUser } = useAuth();
 
-  // ✅ states
+  // Store profile information entered by the reporter
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
@@ -41,7 +41,7 @@ export default function ReporterProfileSetupScreen() {
     location: "",
   });
 
-  // Fetch user details on mount
+  // Fetch existing user information when the screen loads
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -50,6 +50,7 @@ export default function ReporterProfileSetupScreen() {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data: any = await response.json();
+        // Pre-fill fields with existing account information
         if (response.ok) {
           if (data.name) setName(data.name);
           if (data.phone) setPhone(data.phone);
@@ -61,6 +62,7 @@ export default function ReporterProfileSetupScreen() {
     fetchUser();
   }, []);
 
+  // Upload a local image to Cloudinary and return its URL
   const uploadToCloudinaryIfLocal = async (uriOrAsset: any, token: string) => {
     if (!uriOrAsset) return null;
 
@@ -102,6 +104,7 @@ export default function ReporterProfileSetupScreen() {
       type: mimeType,
     } as any);
 
+    // Send the image to the backend upload endpoint
     const res = await fetch(`${API_URL}/upload/cloudinary`, {
       method: "POST",
       headers: {
@@ -122,12 +125,12 @@ export default function ReporterProfileSetupScreen() {
       }
       throw new Error(errorMsg);
     }
-
+    // Return the uploaded Cloudinary URL
     const data: any = await res.json();
     return data.url;
   };
 
-  // ✅ image (optional)
+  // Open the device gallery and select a profile image
   const handlePickImage = async () => {
     // ask permission
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -144,12 +147,12 @@ export default function ReporterProfileSetupScreen() {
       allowsEditing: true,
       aspect: [1, 1],
     });
-
+    // Save the selected image URI
     if (!result.canceled) {
       setImage(result.assets[0].uri);
     }
   };
-
+  // Detect the reporter's current location
   const handleGetLocation = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
 
@@ -157,32 +160,30 @@ export default function ReporterProfileSetupScreen() {
       Alert.alert("Permission denied for location");
       return;
     }
-
+    // Get the current GPS coordinates
     const loc = await Location.getCurrentPositionAsync({});
-
+    // Reverse geocode the coordinates to get the address
     const address = await Location.reverseGeocodeAsync({
       latitude: loc.coords.latitude,
       longitude: loc.coords.longitude,
     });
-
+    // Update the location field with the detected address
     if (address.length > 0) {
       const place = `${address[0].city || ""}, ${address[0].country || ""}`;
       setLocation(place);
     }
   };
 
-  // ✅ validation function
+  // Validate all required profile fields
   const validate = () => {
     let valid = true;
     let newErrors = { name: "", phone: "", location: "" };
 
-    // 👤 name validation (required)
     if (!name.trim()) {
       newErrors.name = "Name is required";
       valid = false;
     }
 
-    // 📞 phone validation (required)
     if (!phone.trim()) {
       newErrors.phone = "Phone number is required";
       valid = false;
@@ -191,7 +192,6 @@ export default function ReporterProfileSetupScreen() {
       valid = false;
     }
 
-    // 📍 location validation (required)
     if (!location.trim()) {
       newErrors.location = "Location is required";
       valid = false;
@@ -201,7 +201,7 @@ export default function ReporterProfileSetupScreen() {
     return valid;
   };
 
-  // ✅ submit
+  // Submit the completed reporter profile
   const handleSubmit = async () => {
     if (!validate()) return;
 
@@ -211,6 +211,7 @@ export default function ReporterProfileSetupScreen() {
 
       const uploadedImageUrl = await uploadToCloudinaryIfLocal(image, token);
 
+      // Save profile details to the backend
       const response = await fetch(`${API_URL}/profiles/general`, {
         method: "POST",
         headers: {
@@ -226,6 +227,7 @@ export default function ReporterProfileSetupScreen() {
         }),
       });
 
+      // Refresh authentication data and navigate after successful submission
       const data: any = await response.json();
       if (response.ok) {
         await refreshUser();
@@ -255,7 +257,7 @@ export default function ReporterProfileSetupScreen() {
         Join the community to help animals and report strays.
       </Text>
 
-      {/* 📸 Profile Image (optional) */}
+      {/* Profile Image (optional) */}
       <ProfileImageUpload
         imageUri={image}
         onPress={handlePickImage}
@@ -294,8 +296,6 @@ export default function ReporterProfileSetupScreen() {
         error={errors.location}
       />
 
-      {/* 📍 Auto detect button */}
-
       {/* Bio */}
       <View style={styles.bioWrapper}>
         <Text style={styles.fieldLabel}>Short Bio (Optional)</Text>
@@ -312,7 +312,7 @@ export default function ReporterProfileSetupScreen() {
         <Text style={styles.charCount}>{bio.length}/150</Text>
       </View>
 
-      {/* 🔘 Button */}
+      {/* Button */}
       <View style={{ marginTop: 20 }}>
         <PrimaryButton
           title="Complete Registration"
