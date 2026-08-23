@@ -30,24 +30,29 @@ import { API_URL } from "../../constants/config.constants";
 
 const BRAND_COLOR = "#f59e0b";
 
+// Handles NGO profile creation
 export default function NgoProfileSetupScreen() {
   const router = useRouter();
   const { refreshUser } = useAuth();
 
-  // ✅ states
+  // Organization Details states
   const [orgName, setOrgName] = useState("");
   const [contactPerson, setContactPerson] = useState("");
   const [regNumber, setRegNumber] = useState("");
   const [year, setYear] = useState("");
 
+  // Contact and location Information
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
   const [bio, setBio] = useState("");
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [geocodedLocationText, setGeocodedLocationText] = useState("");
 
+  // Profile image and document
   const [image, setImage] = useState<string | null>(null);
   const [document, setDocument] = useState(null);
+
+  // Payment details
   const [merchantId, setMerchantId] = useState("");
   const [merchantSecret, setMerchantSecret] = useState("");
   const [payHereAppId, setPayHereAppId] = useState("");
@@ -63,6 +68,7 @@ export default function NgoProfileSetupScreen() {
     year: "",
     phone: "",
     location: "",
+    document: "",
   });
 
   // Persist form state in a ref so it survives Android Activity recreation
@@ -81,6 +87,7 @@ export default function NgoProfileSetupScreen() {
     formPersistRef.current = { orgName, contactPerson, regNumber, year, phone, location, bio, coords, image, merchantId, merchantSecret, payHereAppId, payHereAppSecret, geocodedLocationText };
   }, [orgName, contactPerson, regNumber, year, phone, location, bio, coords, image, merchantId, merchantSecret, payHereAppId, payHereAppSecret, geocodedLocationText]);
 
+  //Uploads a local image or document to Cloudinary.
   const uploadToCloudinaryIfLocal = async (uriOrAsset: any, token: string) => {
     if (!uriOrAsset) return null;
 
@@ -88,6 +95,7 @@ export default function NgoProfileSetupScreen() {
     let name = "upload_file";
     let mimeType = "image/jpeg";
 
+    // Handle objects returned by ImagePicker and DocumentPicker.
     if (typeof uriOrAsset === "object" && uriOrAsset.uri) {
       uri = uriOrAsset.uri;
       name = uriOrAsset.name || "upload_file";
@@ -122,6 +130,7 @@ export default function NgoProfileSetupScreen() {
       type: mimeType,
     } as any);
 
+    // Upload the file through the backend Cloudinary endpoint.
     const res = await fetch(`${API_URL}/upload/cloudinary`, {
       method: "POST",
       headers: {
@@ -168,6 +177,7 @@ export default function NgoProfileSetupScreen() {
       if (saved.geocodedLocationText) setGeocodedLocationText(saved.geocodedLocationText);
     }
 
+    // Fetch the latest user information from the backend.
     const fetchUser = async () => {
       try {
         const token = await SecureStore.getItemAsync("authToken");
@@ -186,7 +196,7 @@ export default function NgoProfileSetupScreen() {
     fetchUser();
   }, []);
 
-  // 📸 image picker
+  //  Opens the device gallery and stores the selected organization image.
   const handlePickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) return;
@@ -200,7 +210,7 @@ export default function NgoProfileSetupScreen() {
     }
   };
 
-  // 📍 location
+  // location
   const handleGetLocation = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") return;
@@ -216,7 +226,7 @@ export default function NgoProfileSetupScreen() {
     }
   };
 
-  // 📄 file upload
+  // file upload
   const handlePickFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -234,8 +244,11 @@ export default function NgoProfileSetupScreen() {
     }
   };
 
+  /**
+   * Validates all required NGO profile fields before submission.
+   */
   const validate = () => {
-    const newErrors = { orgName: "", contactPerson: "", regNumber: "", year: "", phone: "", location: "" };
+    const newErrors = { orgName: "", contactPerson: "", regNumber: "", year: "", phone: "", location: "", document: "" };
     let valid = true;
 
     if (!orgName.trim()) { newErrors.orgName = "Organization name is required"; valid = false; }
@@ -245,6 +258,7 @@ export default function NgoProfileSetupScreen() {
     if (!phone.trim()) { newErrors.phone = "Phone number is required"; valid = false; }
     else if (!/^[0-9]{10}$/.test(phone.trim())) { newErrors.phone = "Must be exactly 10 digits (e.g. 0771234567)"; valid = false; }
     if (!location.trim()) { newErrors.location = "Address is required"; valid = false; }
+    if (!document) { newErrors.document = "Verification document is required"; valid = false; }
 
     setErrors(newErrors);
     return valid;
@@ -319,6 +333,7 @@ export default function NgoProfileSetupScreen() {
       });
 
       const data: any = await response.json();
+      // Refresh authentication data before moving to verification status.
       if (response.ok) {
         await refreshUser();
         router.replace("/auth/VerificationPending");
@@ -365,8 +380,8 @@ export default function NgoProfileSetupScreen() {
       {/* ORGANIZATION DETAILS */}
       <FormSection title="Organization Details">
         <InputField label="Organization Name *" placeholder="e.g. Save The Strays Foundation" value={orgName} onChangeText={setOrgName} error={errors.orgName} />
-        <InputField label="Contact Person Name *" placeholder="e.g. Jane Doe" value={contactPerson} onChangeText={setContactPerson} error={errors.contactPerson} />
-        <InputField label="Registration Number *" placeholder="e.g. NGO-SL-2024-001" value={regNumber} onChangeText={setRegNumber} error={errors.regNumber} />
+        <InputField label="Contact Person Name *" placeholder="e.g. Kasun Perera" value={contactPerson} onChangeText={setContactPerson} error={errors.contactPerson} />
+        <InputField label="Registration Number *" placeholder="e.g. L-62414" value={regNumber} onChangeText={setRegNumber} error={errors.regNumber} />
         <InputField label="Founded Year *" placeholder="e.g. 2015" value={year} onChangeText={setYear} keyboardType="numeric" error={errors.year} />
       </FormSection>
 
@@ -413,8 +428,11 @@ export default function NgoProfileSetupScreen() {
       </FormSection>
 
       {/* VERIFICATION */}
-      <FormSection title="Verification Documents">
+      <FormSection title="Verification Documents *">
         <FileUploadField file={document} onPick={handlePickFile} />
+        {errors.document ? (
+          <Text style={styles.errorText}>{errors.document}</Text>
+        ) : null}
         <Text style={styles.helperText}>
           Upload NGO registration documents for verification.
         </Text>

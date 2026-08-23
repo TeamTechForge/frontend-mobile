@@ -38,7 +38,9 @@ export default function HomeScreen() {
 
       setSearchLoading(true);
       try {
+        // Retrieve the user's JWT from secure device storage.
         const token = await SecureStore.getItemAsync("authToken");
+        // Send the search query to the backend search endpoint.
         const res = await fetch(`${API_URL}/search?q=${encodeURIComponent(debouncedQuery)}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
@@ -86,7 +88,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
+      {/* Header containing the StrayCare logo and notification button. */}
       <View style={styles.header}>
         <Image
           source={require("../../assets/images/straycarelogo.png")}
@@ -98,11 +100,12 @@ export default function HomeScreen() {
           onPress={() => router.push("/modals/Notifications" as any)}
         >
           <Ionicons name="notifications-outline" size={24} color="#000" />
+          {/* Show a red indicator when unread notifications exist. */}
           {unreadCount > 0 && <View style={styles.badgeDot} />}
         </TouchableOpacity>
       </View>
 
-      {/* GREETING */}
+      {/* Personalized greeting using the NGO name when available. */}
       <Text style={styles.greeting}>
         Hello, {user?.organizationName || user?.name || "User"} 👋{"\n"}
         <Text style={styles.greetingSub}>
@@ -121,18 +124,19 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* SEARCH BAR CONTAINER */}
+      {/* Search area for finding verified NGOs, shelters, and veterinarians. */}
       <View style={[{ zIndex: 10, position: "relative" }, searchQuery.trim().length > 0 && { flex: 1 }]}>
         <View style={styles.searchBar}>
           <Feather name="search" size={18} color="#747272ff" />
           <TextInput
-            placeholder="Search for Vets/Shelters"
+            placeholder="Search for Vets/Shelters by name or location..."
             placeholderTextColor="#9CA3AF"
             style={styles.searchInput}
             value={searchQuery}
             onChangeText={setSearchQuery}
             clearButtonMode="while-editing"
           />
+          {/* Clear the search field and remove current results. */}
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => { setSearchQuery(""); setSearchResults([]); }}>
               <Feather name="x" size={18} color="#7b7a7aff" />
@@ -140,14 +144,16 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* SEARCH RESULTS DROPDOWN OVERLAY */}
+        {/* Display search results in an overlay below the search bar. */}
         {searchQuery.trim().length > 0 && (
           <View style={styles.searchDropdown}>
             {searchLoading ? (
               <ActivityIndicator size="small" color={BRAND_COLOR} style={{ padding: 20 }} />
             ) : searchResults.length === 0 ? (
+              // Display a message when no matching profiles are found.
               <Text style={styles.noResultsText}>No verified NGOs, Shelters, or Veterinarians found.</Text>
             ) : (
+              // Display the profiles returned by the backend.
               <FlatList
                 data={searchResults}
                 keyExtractor={(item, index) => item.userId + index}
@@ -158,8 +164,10 @@ export default function HomeScreen() {
                   <TouchableOpacity
                     style={styles.searchItem}
                     onPress={() => {
+                      // Clear search state before opening the profile.
                       setSearchQuery("");
                       setSearchResults([]);
+                      // Navigate to the selected user's profile.
                       router.push(`/profile/${item.userId}`);
                     }}
                   >
@@ -177,9 +185,11 @@ export default function HomeScreen() {
                         <Text style={styles.searchItemName} numberOfLines={1}>
                           {item.name}
                         </Text>
+                        {/* Indicates that the returned profile is verified. */}
                         <Ionicons name="checkmark-circle" size={14} color="#4A90E2" style={{ marginLeft: 4 }} />
                       </View>
 
+                      {/* Display the clinic name and specialization if available. */}
                       {(item.clinicName || item.specialization) && (
                         <View style={styles.tagsContainer}>
                           {item.clinicName && (
@@ -212,6 +222,7 @@ export default function HomeScreen() {
                       ) : null}
                     </View>
 
+                    {/* Display the profile type as either Animal Shelter or Veterinarian. */}
                     <View style={[
                       styles.typeBadge,
                       { backgroundColor: (item.type === "NGO" || item.type === "Animal Shelter") ? "#EFF6FF" : "#ECFDF5" }
@@ -231,7 +242,7 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* QUICK ACTIONS */}
+      {/* Quick actions are hidden while the user is actively searching. */}
       {searchQuery.trim().length === 0 && (
         <>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
