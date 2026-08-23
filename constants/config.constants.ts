@@ -10,7 +10,7 @@ import { Platform } from 'react-native';
  * 3. Hardcoded fallback IP
  */
 
-const FALLBACK_IP = '172.20.10.6';
+const FALLBACK_IP = ' 10.234.157.94';
 const BACKEND_PORT = 5000;
 
 function getMetroHost(): string | null {

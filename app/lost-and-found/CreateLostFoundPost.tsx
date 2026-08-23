@@ -23,6 +23,7 @@ import ChatLocationPicker from '../../components/chat/ChatLocationPicker';
 import PrimaryButton from '../../components/PrimaryButton';
 import MapViewWrapper, { Marker } from '../../components/MapViewWrapper';
 import { ANIMAL_BREEDS } from '../../constants/breeds.constants';
+import PetBreedSelector from '../../components/PetBreedSelector';
 import { getPlaceDetails, PlacePrediction, searchPlaces } from '../../services/places.service';
 
 // Centralized color tokens used across all components and styles
@@ -63,7 +64,6 @@ const CreatePost = () => {
     images: [] as string[], // Array holding the picked image URI (max 1)
   });
 
-  const [breedDropdownOpen, setBreedDropdownOpen] = useState(false); // Controls breed dropdown visibility
   const [showDatePicker, setShowDatePicker] = useState(false);       // Controls date picker visibility
   const [showLocationPicker, setShowLocationPicker] = useState(false); // Controls location picker modal
   const [selectedRegion, setSelectedRegion] = useState<{ latitude: number, longitude: number } | null>(null); // For map preview
@@ -89,12 +89,19 @@ const CreatePost = () => {
     try {
       const post = await getAnimalPostById(postId as string);
       skipNextLocationSearch.current = true;
+      const savedBreed = post.breed?.trim() || '';
+      const savedType = post.type || 'other';
+      const commonBreeds = savedType === 'dog'
+        ? ANIMAL_BREEDS.Dog
+        : savedType === 'cat'
+        ? ANIMAL_BREEDS.Cat
+        : [];
       setForm({
         status: post.status,
-        type: post.type || 'other',
+        type: savedType,
         customType: post.customType || '',
-        breed: post.breed || '',
-        otherBreed: '',
+        breed: savedBreed && !commonBreeds.includes(savedBreed) ? 'Other' : savedBreed,
+        otherBreed: savedBreed && !commonBreeds.includes(savedBreed) ? savedBreed : '',
         name: post.name || '',
         description: post.description || '',
         location: post.location || '',
@@ -332,11 +339,14 @@ const CreatePost = () => {
     if (!validateForm()) return; // Stop if any validation fails
     setIsSubmitting(true);
     try {
+      const selectedBreed = form.breed;
+      const customBreed = form.otherBreed;
+      const finalBreed = selectedBreed === 'Other' ? customBreed.trim() : selectedBreed;
       const submitPayload = {
         ...form,
         latitude: selectedRegion?.latitude ?? null,
         longitude: selectedRegion?.longitude ?? null,
-        breed: form.breed === 'Other' ? form.otherBreed : form.breed,
+        breed: finalBreed,
         contactName: user?.name || '',
         contactNumber: user?.phone || '',
         userId: user?._id || '',
@@ -373,10 +383,6 @@ const CreatePost = () => {
       setIsSubmitting(false); // Re-enable submit button regardless of outcome
     }
   };
-
-  // Predefined breed options for dogs and cats (Unknown at top, Other at bottom)
-  const dogBreeds = ANIMAL_BREEDS.Dog;
-  const catBreeds = ANIMAL_BREEDS.Cat;
 
   // Renders an uppercase spaced label above each form field
   const FieldLabel = ({ text }: { text: string }) => {
@@ -452,8 +458,8 @@ const CreatePost = () => {
               onPress={() => {
                 updateForm('type', t);
                 updateForm('breed', '');       // Reset breed when type changes
+                updateForm('otherBreed', '');  // Reset incompatible manual breed
                 updateForm('customType', '');  // Reset custom type when type changes
-                setBreedDropdownOpen(false);   // Close dropdown if open
               }}
             >
               <Text style={[s.typeBtnText, form.type === t && s.typeBtnTextActive]}>
@@ -479,65 +485,18 @@ const CreatePost = () => {
           </View>
         )}
 
-        {/* Breed dropdown — only shown for dog or cat */}
+        {/* Reusable breed selector — only shown for dog or cat */}
         {(form.type === 'dog' || form.type === 'cat') && (
           <View style={s.fieldGroup}>
-            <FieldLabel text="Breed *" />
-            {/* Tapping the trigger toggles the dropdown list open/closed */}
-            <TouchableOpacity
-              style={[s.input, s.dropdownTrigger, errors.breed && s.inputError]}
-              onPress={() => setBreedDropdownOpen(p => !p)}
-            >
-              <Text style={form.breed ? s.inputText : s.placeholder}>
-                {form.breed || `Select ${form.type} breed`}
-              </Text>
-              {/* Chevron flips direction based on open/closed state */}
-              <Ionicons
-                name={breedDropdownOpen ? 'chevron-up' : 'chevron-down'}
-                size={18}
-                color={C.textSub}
-              />
-            </TouchableOpacity>
-
-            {/* Scrollable list of breed options — visible only when dropdown is open */}
-            {breedDropdownOpen && (
-              <ScrollView style={s.dropdownList} nestedScrollEnabled={true}>
-                {(form.type === 'dog' ? dogBreeds : catBreeds).map(b => (
-                  <TouchableOpacity
-                    key={b}
-                    style={[s.dropdownItem, form.breed === b && s.dropdownItemActive]} // Highlight selected breed
-                    onPress={() => {
-                      updateForm('breed', b);
-                      setBreedDropdownOpen(false);                   // Close after selection
-                      setErrors(prev => ({ ...prev, breed: '' }));   // Clear breed error
-                    }}
-                  >
-                    <Text style={[s.dropdownItemText, form.breed === b && s.dropdownItemTextActive]}>
-                      {b}
-                    </Text>
-                    {/* Checkmark icon shown next to the currently selected breed */}
-                    {form.breed === b && (
-                      <Ionicons name="checkmark" size={16} color={C.onPrimaryContainer} />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
-            <FieldError field="breed" />
-          </View>
-        )}
-
-        {/* Specify Other Breed — only shown when breed is "Other" */}
-        {form.breed === 'Other' && (
-          <View style={s.fieldGroup}>
-            <FieldLabel text="Specify Breed *" />
-            <TextInput
-              style={[s.input, errors.breed && s.inputError]}
-              placeholder="e.g. Local Mixed Breed"
-              placeholderTextColor={C.textPlaceholder}
-              onChangeText={t => updateForm('otherBreed', t)}
-              onBlur={() => validateField('breed')}
-              value={form.otherBreed}
+            <PetBreedSelector
+              animalType={form.type === 'dog' ? 'Dog' : 'Cat'}
+              selectedBreed={form.breed}
+              customBreed={form.otherBreed}
+              onSelectedBreedChange={(breed) => updateForm('breed', breed)}
+              onCustomBreedChange={(customBreed) => updateForm('otherBreed', customBreed)}
+              breedError={errors.breed}
+              customBreedError={form.breed === 'Other' ? errors.breed : undefined}
+              onCustomBreedBlur={() => validateField('breed')}
             />
           </View>
         )}
