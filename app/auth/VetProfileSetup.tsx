@@ -338,6 +338,7 @@ export default function VetProfileSetupScreen() {
       const token = await SecureStore.getItemAsync("authToken");
       if (!token) throw new Error("No authorization token found");
 
+      // Convert a manually entered location into coordinates.
       let finalCoords = coords;
       if (primaryLocation.trim() !== geocodedLocationText.trim()) {
         try {
@@ -437,7 +438,7 @@ export default function VetProfileSetupScreen() {
 
         <InputField
           label="Primary Location *"
-          placeholder="123 Rescue Way, City, State"
+          placeholder="e.g. 123 Main Street, Colombo 03"
           value={primaryLocation}
           onChangeText={setPrimaryLocation}
           icon="location-outline"
@@ -483,7 +484,7 @@ export default function VetProfileSetupScreen() {
 
         <InputField
           label="Clinic Address *"
-          placeholder="123 Rescue Way, City, State"
+          placeholder="e.g. 123 Main Street, Colombo 03"
           value={clinicAddress}
           onChangeText={setClinicAddress}
           error={errors.clinicAddress}

@@ -290,6 +290,7 @@ export default function NgoProfileSetupScreen() {
       const token = await SecureStore.getItemAsync("authToken");
       if (!token) throw new Error("No authorization token found");
 
+      // Convert a manually entered location into coordinates.
       let finalCoords = coords;
       if (location.trim() !== geocodedLocationText.trim()) {
         try {

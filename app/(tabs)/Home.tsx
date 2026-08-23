@@ -189,25 +189,15 @@ export default function HomeScreen() {
                         <Ionicons name="checkmark-circle" size={14} color="#4A90E2" style={{ marginLeft: 4 }} />
                       </View>
 
-                      {/* Display the clinic name and specialization if available. */}
-                      {(item.clinicName || item.specialization) && (
+                      {/* Display the clinic name if available. */}
+                      {item.clinicName && (
                         <View style={styles.tagsContainer}>
-                          {item.clinicName && (
-                            <View style={styles.tagBadge}>
-                              <Ionicons name="business-outline" size={12} color="#4B5563" />
-                              <Text style={styles.tagText} numberOfLines={1}>
-                                {item.clinicName}
-                              </Text>
-                            </View>
-                          )}
-                          {item.specialization && (
-                            <View style={[styles.tagBadge, { backgroundColor: "#F3E8FF" }]}>
-                              <Ionicons name="medkit-outline" size={12} color="#7E22CE" />
-                              <Text style={[styles.tagText, { color: "#7E22CE" }]} numberOfLines={1}>
-                                {item.specialization}
-                              </Text>
-                            </View>
-                          )}
+                          <View style={styles.tagBadge}>
+                            <Ionicons name="business-outline" size={12} color="#4B5563" />
+                            <Text style={styles.tagText} numberOfLines={1}>
+                              {item.clinicName}
+                            </Text>
+                          </View>
                         </View>
                       )}
 
