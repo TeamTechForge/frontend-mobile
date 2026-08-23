@@ -68,6 +68,8 @@ export const threadStyles = StyleSheet.create({
 
   msgActionsRow: { marginTop: 10, flexDirection: "row" },
   msgLikeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#F0F0F0",
     borderRadius: 999,
     paddingVertical: 8,
