@@ -320,8 +320,6 @@ export default function ViewAdoptionPost() {
               </TouchableOpacity>
             )}
           />
-          <View style={styles.heroScrim} />
-
           <TouchableOpacity
             style={styles.backBtn}
             onPress={() => router.back()}
@@ -562,14 +560,6 @@ const styles = StyleSheet.create({
   viewerImage: { width: "100%", height: "100%" },
   viewerClose: { position: "absolute", top: 16, right: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: "rgba(40,40,40,0.75)", alignItems: "center", justifyContent: "center" },
   viewerCounter: { position: "absolute", bottom: 24, alignSelf: "center", color: "#FFFFFF", fontSize: 14, fontWeight: "700", backgroundColor: "rgba(40,40,40,0.75)", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14 },
-  heroScrim: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 100,
-    backgroundColor: "rgba(0,0,0,0.15)",
-  },
   backBtn: {
     position: "absolute",
     top: 52,
@@ -577,7 +567,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.92)",
+    backgroundColor: "rgba(255,255,255,0.72)",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
