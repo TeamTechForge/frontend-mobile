@@ -170,6 +170,7 @@ const CommunityPostCard: React.FC<
                 style={
                   styles.overflowMenuItem
                 }
+                disabled={post.isReported}
                 onPress={() => {
                   setMenuVisible(false);
                   setReportVisible(true);
@@ -178,14 +179,15 @@ const CommunityPostCard: React.FC<
                 <Ionicons
                   name="flag-outline"
                   size={16}
-                  color="#E53935"
+                  color={post.isReported ? C.outlineVariant : "#E53935"}
                 />
                 <Text
-                  style={
-                    styles.overflowMenuText
-                  }
+                  style={[
+                    styles.overflowMenuText,
+                    post.isReported && { color: C.outlineVariant },
+                  ]}
                 >
-                  Report
+                  {post.isReported ? "Reported" : "Report"}
                 </Text>
               </TouchableOpacity>}
             </View>

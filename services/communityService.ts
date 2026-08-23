@@ -60,6 +60,7 @@ export interface CommunityPost {
     commentCount: number;
     isLiked: boolean;
     isSaved: boolean;
+    isReported: boolean;
     isOwner: boolean;
     createdAt?: string;
     updatedAt?: string;

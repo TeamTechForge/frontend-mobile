@@ -473,13 +473,16 @@ export default function CommunityPostView() {
                         <View style={styles.photoOverflowDropdown}>
                           <TouchableOpacity
                             style={styles.overflowDropdownItem}
+                            disabled={post.isReported}
                             onPress={() => {
                               setMenuVisible(false);
                               setReportVisible(true);
                             }}
                           >
-                            <Ionicons name="flag-outline" size={16} color="#E53935" />
-                            <Text style={styles.overflowDropdownItemTextDestructive}>Report Post</Text>
+                            <Ionicons name="flag-outline" size={16} color={post.isReported ? "#B8B8B8" : "#E53935"} />
+                            <Text style={[styles.overflowDropdownItemTextDestructive, post.isReported && { color: "#B8B8B8" }]}>
+                              {post.isReported ? "Reported" : "Report Post"}
+                            </Text>
                           </TouchableOpacity>
                         </View>
                       )}
@@ -523,13 +526,16 @@ export default function CommunityPostView() {
                           <View style={styles.textOverflowDropdown}>
                             <TouchableOpacity
                               style={styles.overflowDropdownItem}
+                              disabled={post.isReported}
                               onPress={() => {
                                 setMenuVisible(false);
                                 setReportVisible(true);
                               }}
                             >
-                              <Ionicons name="flag-outline" size={16} color="#E53935" />
-                              <Text style={styles.overflowDropdownItemTextDestructive}>Report Post</Text>
+                              <Ionicons name="flag-outline" size={16} color={post.isReported ? "#B8B8B8" : "#E53935"} />
+                              <Text style={[styles.overflowDropdownItemTextDestructive, post.isReported && { color: "#B8B8B8" }]}>
+                                {post.isReported ? "Reported" : "Report Post"}
+                              </Text>
                             </TouchableOpacity>
                           </View>
                         )}
@@ -887,7 +893,12 @@ export default function CommunityPostView() {
           visible={reportVisible}
           onClose={() => setReportVisible(false)}
           onSubmit={async (reason) => {
-            if (post) await reportCommunityPost(post._id, reason);
+            if (post) {
+              await reportCommunityPost(post._id, reason);
+              setPost((currentPost) =>
+                currentPost ? { ...currentPost, isReported: true } : currentPost
+              );
+            }
           }}
         />
 
