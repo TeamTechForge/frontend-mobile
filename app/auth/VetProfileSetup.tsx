@@ -10,7 +10,9 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  KeyboardAvoidingView,
+  Platform
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
@@ -399,7 +401,8 @@ export default function VetProfileSetupScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       {/* Header */}
       <View style={styles.header}>
         <BackButton onPress={() => router.replace("/auth/RescuerTypeSelection")} />
@@ -492,7 +495,7 @@ export default function VetProfileSetupScreen() {
 
         <InputField
           label="License Number *"
-          placeholder="VET-CD45"
+          placeholder="e.g. VET-CD45"
           value={licenseNumber}
           onChangeText={setLicenseNumber}
           error={errors.licenseNumber}
@@ -587,7 +590,8 @@ export default function VetProfileSetupScreen() {
         disabled={isSubmitting}
       />
       <PayHereSetupGuideModal visible={showPayHereGuide} onClose={() => setShowPayHereGuide(false)} />
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

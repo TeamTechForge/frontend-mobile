@@ -10,7 +10,9 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  KeyboardAvoidingView,
+  Platform
 } from "react-native";
 
 import * as ImagePicker from "expo-image-picker";
@@ -267,7 +269,8 @@ export default function VolunteerProfileSetupScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       {/* Header */}
       <View style={styles.header}>
         <BackButton onPress={() => router.replace("/auth/RescuerTypeSelection")} />
@@ -336,7 +339,8 @@ export default function VolunteerProfileSetupScreen() {
       <Text style={styles.footerNote}>
         You can update your profile anytime from settings.
       </Text>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

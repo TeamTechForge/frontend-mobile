@@ -12,7 +12,9 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  KeyboardAvoidingView,
+  Platform
 } from "react-native";
 
 import { cacheDirectory, makeDirectoryAsync, copyAsync } from "expo-file-system/legacy";
@@ -242,7 +244,8 @@ export default function ReporterProfileSetupScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
 
       {/* Header */}
       <View style={styles.header}>
@@ -319,7 +322,8 @@ export default function ReporterProfileSetupScreen() {
           onPress={handleSubmit}
         />
       </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

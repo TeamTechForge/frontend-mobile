@@ -10,7 +10,9 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  KeyboardAvoidingView,
+  Platform
 } from "react-native";
 
 import * as ImagePicker from "expo-image-picker";
@@ -351,7 +353,8 @@ export default function NgoProfileSetupScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
 
       {/* Header */}
       <View style={styles.header}>
@@ -505,7 +508,8 @@ export default function NgoProfileSetupScreen() {
       <PayHereSetupGuideModal visible={showPayHereGuide} onClose={() => setShowPayHereGuide(false)} />
 
       <View style={{ height: 40 }} />
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
