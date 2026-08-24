@@ -182,7 +182,7 @@ export default function ProfileScreen() {
     { value: totalPostsCount !== null ? totalPostsCount : posts.length, label: "POSTS" },
     ...(!isGeneralUser ? [{ value: rescues.length, label: "RESCUES" }] : []),
     { value: totalReportsCount !== null ? totalReportsCount : reports.length, label: "REPORTS" },
-    ...(isNgo || isVet ? [{ value: "$" + totalDonations, label: "DONATIONS" }] : []),
+    ...(isNgo || isVet ? [{ value: "Rs. " + totalDonations, label: "DONATIONS" }] : []),
   ];
 
   const [activeTab, setActiveTab] = useState<TabKey>("posts");
