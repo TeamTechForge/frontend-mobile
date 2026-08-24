@@ -148,6 +148,11 @@ function InitialLayout() {
             // OS banner is already presented natively by Expo Notifications handler.
             // We must not call presentLocalNotification here as it will trigger this listener again and cause an infinite loop.
 
+            // Do not add chat push notifications to the in-app notification bell
+            if (data.action === "chat") {
+              return;
+            }
+
             addNotification({
               _id: `push-${Date.now()}`,
               userId: user._id || "",
@@ -188,6 +193,10 @@ function InitialLayout() {
           } else if ((title.includes("Discussion") || title.includes("Reply")) && caseId) {
             handledNotificationIdsRef.current.add(notificationId);
             router.push({ pathname: "/discussion-thread/[id]", params: { id: caseId } } as never);
+          } else if (data.action === "chat" && typeof data.conversationId === "string" && data.conversationId) {
+            // Chat message notification → open the conversation
+            handledNotificationIdsRef.current.add(notificationId);
+            router.push({ pathname: "/chat/[conversationId]", params: { conversationId: data.conversationId } } as never);
           }
 
           pushNotificationService.clearLastNotificationResponse();
