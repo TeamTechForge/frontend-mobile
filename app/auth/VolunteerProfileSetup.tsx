@@ -10,7 +10,9 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  KeyboardAvoidingView,
+  Platform
 } from "react-native";
 
 import * as ImagePicker from "expo-image-picker";
@@ -46,7 +48,7 @@ export default function VolunteerProfileSetupScreen() {
     location: "",
   });
 
-  // Fetch user details on mount
+  // Load existing user details when the screen opens.
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -66,6 +68,7 @@ export default function VolunteerProfileSetupScreen() {
     fetchUser();
   }, []);
 
+  // Upload a local image to Cloudinary and return its hosted URL.
   const uploadToCloudinaryIfLocal = async (uriOrAsset: any, token: string) => {
     if (!uriOrAsset) return null;
 
@@ -99,7 +102,7 @@ export default function VolunteerProfileSetupScreen() {
         console.error("Failed to copy content URI to local cache:", err);
       }
     }
-
+    // Send the image to the backend upload endpoint.
     const formData = new FormData();
     formData.append("file", {
       uri,
@@ -132,6 +135,7 @@ export default function VolunteerProfileSetupScreen() {
     return data.url;
   };
 
+  // Open the gallery and select a profile image.
   const handlePickProfileImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -152,6 +156,7 @@ export default function VolunteerProfileSetupScreen() {
     }
   };
 
+  // Get the user's current location and convert it to a readable address.
   const handleGetLocation = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
 
@@ -175,6 +180,7 @@ export default function VolunteerProfileSetupScreen() {
     }
   };
 
+  // Validate the required profile fields.
   const validate = () => {
     const newErrors = {
       name: "",
@@ -206,6 +212,7 @@ export default function VolunteerProfileSetupScreen() {
     return valid;
   };
 
+  // Validate the form, upload the image, and save the profile.
   const handleSubmit = async () => {
     if (!validate()) return;
 
@@ -213,6 +220,7 @@ export default function VolunteerProfileSetupScreen() {
       const token = await SecureStore.getItemAsync("authToken");
       if (!token) throw new Error("No authorization token found");
 
+      // Convert a manually entered location into coordinates.
       let finalCoords = coords;
       if (location.trim() !== geocodedLocationText.trim()) {
         try {
@@ -227,6 +235,7 @@ export default function VolunteerProfileSetupScreen() {
         }
       }
 
+      // Upload the selected profile image before saving the profile.
       const uploadedImageUrl = await uploadToCloudinaryIfLocal(profileImage, token);
 
       const response = await fetch(`${API_URL}/profiles/volunteer`, {
@@ -260,7 +269,8 @@ export default function VolunteerProfileSetupScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       {/* Header */}
       <View style={styles.header}>
         <BackButton onPress={() => router.replace("/auth/RescuerTypeSelection")} />
@@ -329,7 +339,8 @@ export default function VolunteerProfileSetupScreen() {
       <Text style={styles.footerNote}>
         You can update your profile anytime from settings.
       </Text>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

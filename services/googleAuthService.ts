@@ -228,6 +228,71 @@ export async function handleGoogleSignIn(
 }
 
 /**
+ * Obtain a fresh Firebase ID token from a Google Sign-In response for
+ * identity verification purposes (e.g. account deletion).
+ *
+ * Unlike handleGoogleSignIn, this function does NOT exchange the token with
+ * the backend and does NOT return a StrayCare JWT. It only verifies the
+ * Google credential with Firebase and returns the resulting Firebase ID token,
+ * which the caller can send to a verification endpoint.
+ *
+ * @param response - The response object from useGoogleAuth
+ * @returns A Firebase ID token string
+ * @throws If the response is cancelled, invalid, or Firebase exchange fails
+ */
+export async function getFirebaseIdTokenForDeletion(
+  response: GoogleAuthResponse
+): Promise<string> {
+  if (!response) {
+    throw new Error("No response received from Google Sign-In.");
+  }
+
+  if (response.type === "dismiss" || response.type === "cancel") {
+    throw new Error("CANCELLED");
+  }
+
+  if (response.type === "error") {
+    throw new Error(response.error || "Google Sign-In failed.");
+  }
+
+  if (response.type !== "success") {
+    throw new Error(
+      `Google Sign-In failed with type: ${(response as any).type}. Please try again.`
+    );
+  }
+
+  const { id_token } = response.params;
+
+  if (!id_token) {
+    throw new Error("Failed to obtain ID token from Google. Please try again.");
+  }
+
+  // Authenticate with Firebase using the Google credential to obtain a
+  // Firebase ID token. We do not proceed to the StrayCare backend login flow.
+  let firebaseUser: any;
+  try {
+    const credential = GoogleAuthProvider.credential(id_token);
+    const userCredential = await signInWithCredential(auth, credential);
+    firebaseUser = userCredential.user;
+  } catch (error: any) {
+    const message =
+      error.code === "auth/invalid-credential"
+        ? "Google credential is invalid or expired. Please try again."
+        : error.code === "auth/network-request-failed"
+          ? "Network error during authentication. Please check your connection."
+          : `Firebase authentication failed: ${error.message}`;
+    throw new Error(message);
+  }
+
+  // Exchange the Firebase user object for a short-lived Firebase ID token.
+  try {
+    return await firebaseUser.getIdToken();
+  } catch {
+    throw new Error("Failed to obtain Firebase ID token. Please try again.");
+  }
+}
+
+/**
  * Clear the Google Sign-In session on the device.
  */
 export async function clearGoogleSession(): Promise<void> {

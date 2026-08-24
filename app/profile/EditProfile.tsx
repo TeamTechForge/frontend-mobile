@@ -59,6 +59,12 @@ export default function EditProfileScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isViewerVisible, setIsViewerVisible] = useState(false);
 
+  const [errors, setErrors] = useState({
+    name: "", phone: "", location: "", orgName: "", contactPerson: "", 
+    regNumber: "", foundedYear: "", clinicName: "", clinicAddress: "", 
+    licenseNumber: "", yearsOfExperience: "",
+  });
+
   const uploadToCloudinaryIfLocal = async (uriOrAsset: any, token: string) => {
     if (!uriOrAsset) return null;
 
@@ -157,7 +163,7 @@ export default function EditProfileScreen() {
               setClinicName(profileData.clinicName || "");
               setClinicAddress(profileData.clinicAddress || "");
               setLicenseNumber(profileData.licenseNumber || "");
-              setYearsOfExperience(profileData.yearsOfExperience || "");
+              setYearsOfExperience(profileData.yearsOfExperience !== undefined && profileData.yearsOfExperience !== null ? String(profileData.yearsOfExperience) : "");
               setLicenseDocument(profileData.licenseDocument || null);
               setMerchantId(profileData.merchantId || "");
               setMerchantSecret(profileData.merchantSecret || "");
@@ -238,14 +244,50 @@ export default function EditProfileScreen() {
     }
   };
 
+  const validate = () => {
+    let valid = true;
+    let newErrors = {
+      name: "", phone: "", location: "", orgName: "", contactPerson: "", regNumber: "", foundedYear: "", clinicName: "", clinicAddress: "", licenseNumber: "", yearsOfExperience: "",
+    };
+
+    if (role !== "ngo" && !name.trim()) { newErrors.name = "Name is required"; valid = false; }
+    if (!phone.trim()) { newErrors.phone = "Phone number is required"; valid = false; }
+    else if (!/^[0-9]{10}$/.test(phone.trim())) { newErrors.phone = "Must be exactly 10 digits (e.g. 0771234567)"; valid = false; }
+    if (!location.trim()) { newErrors.location = "Location is required"; valid = false; }
+
+    if (role === "vet") {
+      if (!clinicName.trim()) { newErrors.clinicName = "Clinic name is required"; valid = false; }
+      if (!clinicAddress.trim()) { newErrors.clinicAddress = "Clinic address is required"; valid = false; }
+      if (!licenseNumber.trim()) { newErrors.licenseNumber = "License number is required"; valid = false; }
+      if (!yearsOfExperience.trim()) { newErrors.yearsOfExperience = "Years of experience is required"; valid = false; }
+      else if (isNaN(Number(yearsOfExperience.trim())) || Number(yearsOfExperience.trim()) < 0 || Number(yearsOfExperience.trim()) > 100) {
+        newErrors.yearsOfExperience = "Must be a valid number";
+        valid = false;
+      }
+    }
+
+    if (role === "ngo") {
+      if (!orgName.trim()) { newErrors.orgName = "Organization name is required"; valid = false; }
+      if (!contactPerson.trim()) { newErrors.contactPerson = "Contact person is required"; valid = false; }
+      if (!regNumber.trim()) { newErrors.regNumber = "Registration number is required"; valid = false; }
+      if (!foundedYear.trim()) { newErrors.foundedYear = "Founded year is required"; valid = false; }
+      else if (!/^\d{4}$/.test(foundedYear.trim()) || parseInt(foundedYear.trim(), 10) > new Date().getFullYear()) {
+        newErrors.foundedYear = "Must be a valid 4-digit year";
+        valid = false;
+      }
+    }
+
+    setErrors(newErrors);
+    return valid;
+  };
+
   const handleSaveChanges = async () => {
-    if ((payHereAppId && !payHereAppSecret) || (!payHereAppId && payHereAppSecret)) {
-      Alert.alert("Recurring setup", "Enter both the PayHere App ID and App Secret.");
+    if (!validate()) {
       return;
     }
 
-    if (phone && !/^[0-9]{10}$/.test(phone.trim())) {
-      Alert.alert("Invalid Phone Number", "Please enter a valid 10-digit phone number (e.g. 0771234567). Only numbers are allowed.");
+    if ((payHereAppId && !payHereAppSecret) || (!payHereAppId && payHereAppSecret)) {
+      Alert.alert("Recurring setup", "Enter both the PayHere App ID and App Secret.");
       return;
     }
 
@@ -392,12 +434,12 @@ export default function EditProfileScreen() {
         {role === "ngo" ? (
           <>
             <Text style={styles.label}>Organization Name</Text>
-            <InputField value={orgName} onChangeText={setOrgName} placeholder="Enter org name" />
+            <InputField value={orgName} onChangeText={setOrgName} placeholder="Enter org name" error={errors.orgName} />
           </>
         ) : (
           <>
             <Text style={styles.label}>Full Name</Text>
-            <InputField value={name} onChangeText={setName} placeholder="Enter name" editable={true} />
+            <InputField value={name} onChangeText={setName} placeholder="Enter name" editable={true} error={errors.name} />
           </>
         )}
 
@@ -416,19 +458,20 @@ export default function EditProfileScreen() {
           icon="location-outline"
           rightIcon="locate-outline"
           onRightIconPress={handleGetLocation}
+          error={errors.location}
         />
 
         <Text style={styles.label}>Phone Number</Text>
-        <InputField value={phone} onChangeText={setPhone} placeholder="e.g. 0771234567" editable={true} />
+        <InputField value={phone} onChangeText={setPhone} placeholder="e.g. 0771234567" editable={true} error={errors.phone} />
 
         {role === "ngo" && (
           <>
             <Text style={styles.label}>Contact Person</Text>
-            <InputField value={contactPerson} onChangeText={setContactPerson} placeholder="Enter contact person" />
+            <InputField value={contactPerson} onChangeText={setContactPerson} placeholder="Enter contact person" error={errors.contactPerson} />
             <Text style={styles.label}>Registration Number</Text>
-            <InputField value={regNumber} onChangeText={setRegNumber} placeholder="Enter reg number" />
+            <InputField value={regNumber} onChangeText={setRegNumber} placeholder="Enter reg number" error={errors.regNumber} />
             <Text style={styles.label}>Founded Year</Text>
-            <InputField value={foundedYear} onChangeText={setFoundedYear} placeholder="e.g. 2015" />
+            <InputField value={foundedYear} onChangeText={setFoundedYear} placeholder="e.g. 2015" error={errors.foundedYear} />
           </>
         )}
 
@@ -446,16 +489,16 @@ export default function EditProfileScreen() {
         {role === "vet" && (
           <>
             <Text style={styles.label}>Clinic Name</Text>
-            <InputField value={clinicName} onChangeText={setClinicName} placeholder="Enter clinic name" />
+            <InputField value={clinicName} onChangeText={setClinicName} placeholder="Enter clinic name" error={errors.clinicName} />
 
             <Text style={styles.label}>Clinic Address</Text>
-            <InputField value={clinicAddress} onChangeText={setClinicAddress} placeholder="Enter clinic address" />
+            <InputField value={clinicAddress} onChangeText={setClinicAddress} placeholder="Enter clinic address" error={errors.clinicAddress} />
 
             <Text style={styles.label}>License Number</Text>
-            <InputField value={licenseNumber} onChangeText={setLicenseNumber} placeholder="Enter license number" />
+            <InputField value={licenseNumber} onChangeText={setLicenseNumber} placeholder="Enter license number" error={errors.licenseNumber} />
 
             <Text style={styles.label}>Years of Experience</Text>
-            <InputField value={yearsOfExperience} onChangeText={setYearsOfExperience} placeholder="e.g. 10" />
+            <InputField value={yearsOfExperience} onChangeText={setYearsOfExperience} placeholder="e.g. 10" error={errors.yearsOfExperience} />
 
             <Text style={styles.label}>Medical License Document</Text>
             <FileUploadField file={licenseDocument} onPick={handlePickDocument} />

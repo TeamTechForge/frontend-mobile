@@ -11,6 +11,7 @@ type UserData = {
   name: string;
   email: string;
   role: string;
+  authProvider?: "local" | "google";
   phone?: string;
   profileCompleted?: boolean;
   roleSelected?: boolean;

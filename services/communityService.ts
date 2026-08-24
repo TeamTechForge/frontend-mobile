@@ -60,6 +60,7 @@ export interface CommunityPost {
     commentCount: number;
     isLiked: boolean;
     isSaved: boolean;
+    isReported: boolean;
     isOwner: boolean;
     createdAt?: string;
     updatedAt?: string;
@@ -235,6 +236,15 @@ export const deleteCommunityComment = async (
         commentId,
         commentCount: Number(response.data?.data?.commentCount) || 0,
     };
+};
+
+export const updateCommunityComment = async (
+    postId: string,
+    commentId: string,
+    content: string
+): Promise<CommunityComment> => {
+    const response = await api.put<any>(`/api/community/${postId}/comments/${commentId}`, { content });
+    return response.data?.data ?? response.data;
 };
 
 // ─── Report Community Post ────────────────────────────────────────────────────

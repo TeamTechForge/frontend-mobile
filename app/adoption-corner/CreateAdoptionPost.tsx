@@ -23,6 +23,7 @@ import { getReportByCaseId } from "../../api/strayApiService";
 import { createPost } from "../../services/adoptionService";
 import { ANIMAL_BREEDS, AnimalCategory } from "../../constants/breeds.constants";
 import AdoptionLocationSearchInput from "./AdoptionLocationSearchInput";
+import PetBreedSelector from "../../components/PetBreedSelector";
 
 // Centralized color tokens matching Lost & Found
 const C = {
@@ -82,6 +83,9 @@ type Errors = {
   customCategory?: string;
   breed?: string;
   otherBreed?: string;
+  gender?: string;
+  status?: string;
+  healthStatus?: string;
   location?: string;
   images?: string;
 };
@@ -97,14 +101,13 @@ export default function CreateAdoptionPost() {
   const [customCategory, setCustomCategory] = useState("");
   const [breed, setBreed] = useState("");
   const [otherBreed, setOtherBreed] = useState("");
-  const [breedDropdownOpen, setBreedDropdownOpen] = useState(false);
   const [age, setAge] = useState("");
-  const [gender, setGender] = useState<Gender>("Male");
+  const [gender, setGender] = useState<Gender | "">("");
   const [genderDropdownOpen, setGenderDropdownOpen] = useState(false);
   const [name, setName] = useState("");
-  const [status, setStatus] = useState<Status>("Available");
+  const [status, setStatus] = useState<Status | "">("");
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
-  const [healthStatus, setHealthStatus] = useState<HealthStatus>("Healthy");
+  const [healthStatus, setHealthStatus] = useState<HealthStatus | "">("");
   const [healthDropdownOpen, setHealthDropdownOpen] = useState(false);
   const [description, setDescription] = useState("");
   const [selectedTraits, setSelectedTraits] = useState<string[]>([]); // Initially unselected
@@ -173,7 +176,6 @@ export default function CreateAdoptionPost() {
     setBreed("");
     setOtherBreed("");
     setCustomCategory("");
-    setBreedDropdownOpen(false);
     setErrors((prev) => ({
       ...prev,
       customCategory: undefined,
@@ -224,6 +226,10 @@ export default function CreateAdoptionPost() {
     const newErrors: Errors = {};
 
     if (!name.trim()) newErrors.name = "Pet name is required.";
+
+    if (!gender) newErrors.gender = "Please select a gender.";
+    if (!status) newErrors.status = "Please select a status.";
+    if (!healthStatus) newErrors.healthStatus = "Please select a health status.";
 
     if (age.trim() && !/^\d+(\s*(year|years|month|months|week|weeks))?$/i.test(age.trim())) {
       newErrors.age = "Enter a valid age (e.g. 2 years, 6 months).";
@@ -285,10 +291,10 @@ export default function CreateAdoptionPost() {
           customCategory: customCategory.trim() || undefined,
           breed: finalBreed,
           age,
-          gender,
+          gender: gender as Gender,
           name: name.trim(),
-          status,
-          healthStatus,
+          status: status as Status,
+          healthStatus: healthStatus as HealthStatus,
           description: description.trim(),
           traits: selectedTraits,
           location: location.trim(),
@@ -404,80 +410,24 @@ export default function CreateAdoptionPost() {
           </View>
         )}
 
-        {/* Breed Dropdown - only for Dog or Cat */}
+        {/* Reusable breed selector - only for Dog or Cat */}
         {(category === "Dog" || category === "Cat") && (
           <View style={s.fieldGroup}>
-            <FieldLabel text="Breed *" />
-            <TouchableOpacity
-              style={[
-                s.input,
-                s.dropdownTrigger,
-                errors.breed && s.inputError,
-              ]}
-              onPress={() => setBreedDropdownOpen((p) => !p)}
-              activeOpacity={0.8}
-            >
-              <Text style={breed ? s.inputText : s.placeholder}>
-                {breed || `Select ${category.toLowerCase()} breed`}
-              </Text>
-              <Ionicons
-                name={breedDropdownOpen ? "chevron-up" : "chevron-down"}
-                size={18}
-                color={C.textSub}
-              />
-            </TouchableOpacity>
-
-            {breedDropdownOpen && (
-              <ScrollView style={s.dropdownList} nestedScrollEnabled={true}>
-                {BREEDS_BY_CATEGORY[category].map((b) => (
-                  <TouchableOpacity
-                    key={b}
-                    style={[s.dropdownItem, breed === b && s.dropdownItemActive]}
-                    onPress={() => {
-                      setBreed(b);
-                      setBreedDropdownOpen(false);
-                      setErrors((prev) => ({ ...prev, breed: undefined }));
-                    }}
-                  >
-                    <Text
-                      style={[
-                        s.dropdownItemText,
-                        breed === b && s.dropdownItemTextActive,
-                      ]}
-                    >
-                      {b}
-                    </Text>
-                    {breed === b && (
-                      <Ionicons
-                        name="checkmark"
-                        size={16}
-                        color={C.onPrimaryContainer}
-                      />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
-            <FieldError field="breed" />
-          </View>
-        )}
-
-        {/* Specify Other Breed - only when category is Dog/Cat and breed is Other */}
-        {(category === "Dog" || category === "Cat") && breed === "Other" && (
-          <View style={s.fieldGroup}>
-            <FieldLabel text="Specify Breed *" />
-            <TextInput
-              style={[s.input, errors.otherBreed && s.inputError]}
-              placeholder="e.g. Mixed breed, Dachshund..."
-              placeholderTextColor={C.textPlaceholder}
-              value={otherBreed}
-              onChangeText={(v) => {
-                setOtherBreed(v);
-                if (v.trim())
-                  setErrors((prev) => ({ ...prev, otherBreed: undefined }));
+            <PetBreedSelector
+              animalType={category}
+              selectedBreed={breed}
+              customBreed={otherBreed}
+              onSelectedBreedChange={(value) => {
+                setBreed(value);
+                setErrors((prev) => ({ ...prev, breed: undefined }));
               }}
+              onCustomBreedChange={(value) => {
+                setOtherBreed(value);
+                if (value.trim()) setErrors((prev) => ({ ...prev, otherBreed: undefined }));
+              }}
+              breedError={errors.breed}
+              customBreedError={errors.otherBreed}
             />
-            <FieldError field="otherBreed" />
           </View>
         )}
 
@@ -520,9 +470,9 @@ export default function CreateAdoptionPost() {
         <View style={s.rowFields}>
           {/* Gender */}
           <View style={{ flex: 1 }}>
-            <FieldLabel text="Gender" />
+            <FieldLabel text="Gender *" />
             <TouchableOpacity
-              style={[s.input, s.dropdownTrigger]}
+              style={[s.input, s.dropdownTrigger, errors.gender && s.inputError]}
               onPress={() => {
                 setGenderDropdownOpen((p) => !p);
                 setStatusDropdownOpen(false);
@@ -530,7 +480,9 @@ export default function CreateAdoptionPost() {
               }}
               activeOpacity={0.8}
             >
-              <Text style={s.inputText}>{gender}</Text>
+              <Text style={gender ? s.inputText : s.placeholder}>
+                {gender || "Select gender"}
+              </Text>
               <Ionicons
                 name={genderDropdownOpen ? "chevron-up" : "chevron-down"}
                 size={18}
@@ -549,6 +501,7 @@ export default function CreateAdoptionPost() {
                     onPress={() => {
                       setGender(g);
                       setGenderDropdownOpen(false);
+                      setErrors((prev) => ({ ...prev, gender: undefined }));
                     }}
                   >
                     <Text
@@ -570,13 +523,14 @@ export default function CreateAdoptionPost() {
                 ))}
               </View>
             )}
+            <FieldError field="gender" />
           </View>
 
           {/* Status */}
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <FieldLabel text="Status" />
+            <FieldLabel text="Status *" />
             <TouchableOpacity
-              style={[s.input, s.dropdownTrigger]}
+              style={[s.input, s.dropdownTrigger, errors.status && s.inputError]}
               onPress={() => {
                 setStatusDropdownOpen((p) => !p);
                 setGenderDropdownOpen(false);
@@ -584,7 +538,9 @@ export default function CreateAdoptionPost() {
               }}
               activeOpacity={0.8}
             >
-              <Text style={s.inputText}>{status}</Text>
+              <Text style={status ? s.inputText : s.placeholder}>
+                {status || "Select status"}
+              </Text>
               <Ionicons
                 name={statusDropdownOpen ? "chevron-up" : "chevron-down"}
                 size={18}
@@ -603,6 +559,7 @@ export default function CreateAdoptionPost() {
                     onPress={() => {
                       setStatus(st);
                       setStatusDropdownOpen(false);
+                      setErrors((prev) => ({ ...prev, status: undefined }));
                     }}
                   >
                     <Text
@@ -624,14 +581,15 @@ export default function CreateAdoptionPost() {
                 ))}
               </View>
             )}
+            <FieldError field="status" />
           </View>
         </View>
 
         {/* Health Status */}
         <View style={s.fieldGroup}>
-          <FieldLabel text="Health Status" />
+          <FieldLabel text="Health Status *" />
           <TouchableOpacity
-            style={[s.input, s.dropdownTrigger]}
+            style={[s.input, s.dropdownTrigger, errors.healthStatus && s.inputError]}
             onPress={() => {
               setHealthDropdownOpen((p) => !p);
               setGenderDropdownOpen(false);
@@ -639,7 +597,9 @@ export default function CreateAdoptionPost() {
             }}
             activeOpacity={0.8}
           >
-            <Text style={s.inputText}>{healthStatus}</Text>
+            <Text style={healthStatus ? s.inputText : s.placeholder}>
+              {healthStatus || "Select health status"}
+            </Text>
             <Ionicons
               name={healthDropdownOpen ? "chevron-up" : "chevron-down"}
               size={18}
@@ -658,6 +618,7 @@ export default function CreateAdoptionPost() {
                   onPress={() => {
                     setHealthStatus(hs);
                     setHealthDropdownOpen(false);
+                    setErrors((prev) => ({ ...prev, healthStatus: undefined }));
                   }}
                 >
                   <Text
@@ -679,6 +640,7 @@ export default function CreateAdoptionPost() {
               ))}
             </View>
           )}
+          <FieldError field="healthStatus" />
         </View>
 
         {/* Description */}
@@ -709,7 +671,9 @@ export default function CreateAdoptionPost() {
       {/* SECTION 2: Photos */}
       <View style={s.card}>
         <View style={s.cardHeaderRow}>
-          <Text style={s.sectionTitle}>Photos *</Text>
+          <Text style={s.sectionTitle}>
+            Photos <Text style={{ color: C.error }}>*</Text>
+          </Text>
           <Text style={s.photoCount}>{images.length}/6</Text>
         </View>
 

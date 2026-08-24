@@ -28,13 +28,12 @@ function InitialLayout() {
   const [hasCheckedCompletion, setHasCheckedCompletion] = useState(false);
   const handledNotificationIdsRef = useRef<Set<string>>(new Set());
 
-  // Check if newly approved NGOs/Vets need to see the completion screen
+  // Check if newly approved NGOs/Vets need to be marked as having seen the completion screen
   useEffect(() => {
     if (user && (user.role === "ngo" || user.role === "vet") && user.profileStatus === "Verified") {
       SecureStore.getItemAsync(`seenCompletion_${user._id}`).then((seen) => {
         if (!seen) {
           SecureStore.setItemAsync(`seenCompletion_${user._id}`, "true");
-          router.replace("/auth/CompletedProfileSetup");
         }
         setHasCheckedCompletion(true);
       });
@@ -146,8 +145,8 @@ function InitialLayout() {
             const title = notification.request.content.title || "Notification";
             const message = notification.request.content.body || "";
 
-            // Present OS banner alert natively
-            void pushNotificationService.presentLocalNotification(title, message, data);
+            // OS banner is already presented natively by Expo Notifications handler.
+            // We must not call presentLocalNotification here as it will trigger this listener again and cause an infinite loop.
 
             addNotification({
               _id: `push-${Date.now()}`,

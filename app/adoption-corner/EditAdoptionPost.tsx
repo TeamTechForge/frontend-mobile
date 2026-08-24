@@ -22,6 +22,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { getPostById, updatePost } from "../../services/adoptionService";
 import { ANIMAL_BREEDS, AnimalCategory } from "../../constants/breeds.constants";
 import AdoptionLocationSearchInput from "./AdoptionLocationSearchInput";
+import PetBreedSelector from "../../components/PetBreedSelector";
 
 // Centralized color tokens matching Lost & Found
 const C = {
@@ -90,7 +91,6 @@ export default function EditAdoptionPost() {
   const [customCategory, setCustomCategory] = useState("");
   const [breed, setBreed] = useState(BREEDS_BY_CATEGORY.Dog[0]);
   const [otherBreed, setOtherBreed] = useState("");
-  const [breedDropdownOpen, setBreedDropdownOpen] = useState(false);
   const [age, setAge] = useState("");
   const [gender, setGender] = useState<Gender>("Male");
   const [genderDropdownOpen, setGenderDropdownOpen] = useState(false);
@@ -162,7 +162,6 @@ export default function EditAdoptionPost() {
     setBreed("");
     setOtherBreed("");
     setCustomCategory("");
-    setBreedDropdownOpen(false);
     setErrors((prev) => ({
       ...prev,
       customCategory: undefined,
@@ -412,80 +411,24 @@ export default function EditAdoptionPost() {
           </View>
         )}
 
-        {/* Breed Dropdown - only for Dog or Cat */}
+        {/* Reusable breed selector - only for Dog or Cat */}
         {(category === "Dog" || category === "Cat") && (
           <View style={s.fieldGroup}>
-            <FieldLabel text="Breed *" />
-            <TouchableOpacity
-              style={[
-                s.input,
-                s.dropdownTrigger,
-                errors.breed && s.inputError,
-              ]}
-              onPress={() => setBreedDropdownOpen((p) => !p)}
-              activeOpacity={0.8}
-            >
-              <Text style={breed ? s.inputText : s.placeholder}>
-                {breed || `Select ${category.toLowerCase()} breed`}
-              </Text>
-              <Ionicons
-                name={breedDropdownOpen ? "chevron-up" : "chevron-down"}
-                size={18}
-                color={C.textSub}
-              />
-            </TouchableOpacity>
-
-            {breedDropdownOpen && (
-              <ScrollView style={s.dropdownList} nestedScrollEnabled={true}>
-                {BREEDS_BY_CATEGORY[category].map((b) => (
-                  <TouchableOpacity
-                    key={b}
-                    style={[s.dropdownItem, breed === b && s.dropdownItemActive]}
-                    onPress={() => {
-                      setBreed(b);
-                      setBreedDropdownOpen(false);
-                      setErrors((prev) => ({ ...prev, breed: undefined }));
-                    }}
-                  >
-                    <Text
-                      style={[
-                        s.dropdownItemText,
-                        breed === b && s.dropdownItemTextActive,
-                      ]}
-                    >
-                      {b}
-                    </Text>
-                    {breed === b && (
-                      <Ionicons
-                        name="checkmark"
-                        size={16}
-                        color={C.onPrimaryContainer}
-                      />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
-            <FieldError field="breed" />
-          </View>
-        )}
-
-        {/* Specify Other Breed - only when category is Dog/Cat and breed is Other */}
-        {(category === "Dog" || category === "Cat") && breed === "Other" && (
-          <View style={s.fieldGroup}>
-            <FieldLabel text="Specify Breed *" />
-            <TextInput
-              style={[s.input, errors.otherBreed && s.inputError]}
-              placeholder="e.g. Mixed breed, Dachshund..."
-              placeholderTextColor={C.textPlaceholder}
-              value={otherBreed}
-              onChangeText={(v) => {
-                setOtherBreed(v);
-                if (v.trim())
-                  setErrors((prev) => ({ ...prev, otherBreed: undefined }));
+            <PetBreedSelector
+              animalType={category}
+              selectedBreed={breed}
+              customBreed={otherBreed}
+              onSelectedBreedChange={(value) => {
+                setBreed(value);
+                setErrors((prev) => ({ ...prev, breed: undefined }));
               }}
+              onCustomBreedChange={(value) => {
+                setOtherBreed(value);
+                if (value.trim()) setErrors((prev) => ({ ...prev, otherBreed: undefined }));
+              }}
+              breedError={errors.breed}
+              customBreedError={errors.otherBreed}
             />
-            <FieldError field="otherBreed" />
           </View>
         )}
 

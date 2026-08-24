@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
-import { Alert, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { API_URL } from "../../constants/config.constants";
 
@@ -9,15 +9,27 @@ import SettingsRow from "../../components/settings/SettingsRow";
 import BackButton from "../../components/BackButton";
 import { useAuth } from "../../contexts/AuthContext";
 import { pushNotificationService } from "../../services/pushNotificationService";
+import { useGoogleAuth, getFirebaseIdTokenForDeletion } from "../../services/googleAuthService";
 
 const BRAND_COLOR = "#F5A623";
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   const [pushEnabled, setPushEnabled] = useState(true);
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+
+  // ── Modal state ──────────────────────────────────────────────────────────
+  // Step 1: warning confirmation modal (both providers)
+  const [warningModalVisible, setWarningModalVisible] = useState(false);
+  // Step 2 (local only): password input modal
+  const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+  const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  // Google re-auth hook — mirrored from Login.tsx
+  const { response: googleResponse, promptAsync, isExpoGo } = useGoogleAuth();
 
   useEffect(() => {
     // Load saved preferences
@@ -30,6 +42,31 @@ export default function SettingsScreen() {
     loadPreferences();
   }, []);
 
+  // ── Google re-auth response handler ─────────────────────────────────────
+  // Runs whenever the Google sign-in popup resolves (success, cancel, error).
+  useEffect(() => {
+    if (!googleResponse) return;
+
+    const processGoogleDeletion = async () => {
+      setIsDeletingAccount(true);
+      try {
+        // Obtain a Firebase ID token WITHOUT logging into the StrayCare backend.
+        const firebaseIdToken = await getFirebaseIdTokenForDeletion(googleResponse);
+        await performDeletion({ googleCredential: firebaseIdToken });
+      } catch (error: any) {
+        if (error.message === "CANCELLED") {
+          // User dismissed the Google popup — do nothing
+          return;
+        }
+        Alert.alert("Verification Failed", error.message || "Google authentication failed.");
+      } finally {
+        setIsDeletingAccount(false);
+      }
+    };
+
+    processGoogleDeletion();
+  }, [googleResponse]);
+
   const handlePushToggle = async (enabled: boolean) => {
     setPushEnabled(enabled);
     await SecureStore.setItemAsync("pushEnabled", enabled ? "true" : "false");
@@ -41,7 +78,45 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleDeleteAccount = async () => {
+  // ── Step 1: open the warning modal ──────────────────────────────────────
+  const handleDeleteAccountPress = () => {
+    setWarningModalVisible(true);
+  };
+
+  // ── Step 2: user confirmed the warning — branch by provider ─────────────
+  const handleWarningConfirm = () => {
+    setWarningModalVisible(false);
+
+    const isGoogleUser = user?.authProvider === "google";
+
+    if (isGoogleUser) {
+      // For Google users, trigger the native Google sign-in popup directly.
+      // The useEffect above will handle the response.
+      promptAsync();
+    } else {
+      // For email/password users, show the password input modal.
+      setPassword("");
+      setPasswordModalVisible(true);
+    }
+  };
+
+  // ── Step 2b (local): user submitted their password ───────────────────────
+  const handlePasswordConfirm = async () => {
+    if (!password || password.trim() === "") {
+      Alert.alert("Password required", "Please enter your current password to confirm deletion.");
+      return;
+    }
+    setIsDeletingAccount(true);
+    try {
+      await performDeletion({ password });
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
+  // ── Core deletion call ───────────────────────────────────────────────────
+  // Sends the DELETE /auth/me request with either { password } or { googleCredential }.
+  const performDeletion = async (body: { password?: string; googleCredential?: string }) => {
     try {
       const token = await SecureStore.getItemAsync("authToken");
       if (!token) return;
@@ -50,12 +125,16 @@ export default function SettingsScreen() {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify(body),
       });
 
       if (response.ok) {
+        // Clear local auth state and navigate to the confirmed deletion screen.
         await SecureStore.deleteItemAsync("authToken");
-        setDeleteModalVisible(false);
+        setPasswordModalVisible(false);
+        setWarningModalVisible(false);
         router.replace("/profile/AccountDeleted");
       } else {
         const errorData: any = await response.json();
@@ -135,7 +214,7 @@ export default function SettingsScreen() {
 
       <TouchableOpacity
         style={styles.deleteTextButton}
-        onPress={() => setDeleteModalVisible(true)}
+        onPress={handleDeleteAccountPress}
       >
         <Ionicons name="trash-outline" size={15} color="#FF5A5A" />
         <Text style={styles.deleteText}>Delete Account</Text>
@@ -148,8 +227,8 @@ export default function SettingsScreen() {
 
       <Text style={styles.version}>v2.4.0{"\n"}STRAYCARE RESCUE FOUNDATION</Text>
 
-      {/* DELETE MODAL */}
-      <Modal visible={deleteModalVisible} transparent animationType="fade">
+      {/* ── STEP 1: WARNING MODAL (both providers) ── */}
+      <Modal visible={warningModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.warningCircle}>
@@ -164,11 +243,79 @@ export default function SettingsScreen() {
               donation history, and preferences immediately.
             </Text>
 
-            <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
-              <Text style={styles.deleteButtonText}>Delete Permanently</Text>
+            <TouchableOpacity
+              style={[styles.deleteButton, isDeletingAccount && { opacity: 0.6 }]}
+              onPress={handleWarningConfirm}
+              disabled={isDeletingAccount}
+            >
+              <Text style={styles.deleteButtonText}>
+                {user?.authProvider === "google"
+                  ? "Continue — Verify with Google"
+                  : "Continue — Enter Password"}
+              </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => setDeleteModalVisible(false)}>
+            <TouchableOpacity onPress={() => setWarningModalVisible(false)} disabled={isDeletingAccount}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── STEP 2: PASSWORD MODAL (local/email users only) ── */}
+      <Modal visible={passwordModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.warningCircle}>
+              <Ionicons name="lock-closed-outline" size={26} color={BRAND_COLOR} />
+            </View>
+
+            <Text style={styles.modalTitle}>Confirm Deletion</Text>
+
+            <Text style={styles.modalText}>
+              Enter your current password to permanently delete your account.
+            </Text>
+
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Current password"
+                placeholderTextColor="#999"
+                secureTextEntry={!passwordVisible}
+                value={password}
+                onChangeText={setPassword}
+                autoCapitalize="none"
+                editable={!isDeletingAccount}
+              />
+              <TouchableOpacity
+                onPress={() => setPasswordVisible((v) => !v)}
+                style={styles.eyeButton}
+              >
+                <Ionicons
+                  name={passwordVisible ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color="#888"
+                />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.deleteButton, isDeletingAccount && { opacity: 0.6 }]}
+              onPress={handlePasswordConfirm}
+              disabled={isDeletingAccount}
+            >
+              <Text style={styles.deleteButtonText}>
+                {isDeletingAccount ? "Deleting…" : "Delete Permanently"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setPasswordModalVisible(false);
+                setPassword("");
+              }}
+              disabled={isDeletingAccount}
+            >
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -177,6 +324,7 @@ export default function SettingsScreen() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -292,5 +440,27 @@ const styles = StyleSheet.create({
   cancelText: {
     fontWeight: "700",
     color: "#333",
+  },
+  // ── Password input row inside the deletion confirmation modal ──
+  passwordRow: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 10,
+    backgroundColor: "#F9FAFB",
+    marginBottom: 20,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    fontSize: 15,
+    color: "#111",
+  },
+  eyeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
 });

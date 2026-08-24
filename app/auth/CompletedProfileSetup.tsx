@@ -17,11 +17,7 @@ export default function OnboardingCompleteScreen() {
 
 
   const handleGetStarted = () => {
-    if ((user?.role === "ngo" || user?.role === "vet") && user?.profileStatus !== "Verified") {
-      router.replace("/auth/VerificationPending");
-    } else {
-      router.replace("/(tabs)/Home");
-    }
+    router.replace("/(tabs)/Home");
   };
 
   return (
