@@ -18,9 +18,10 @@ module.exports = {
       ...(googleServicesFile ? { googleServicesFile } : {}),
     },
     updates: {
-      enabled: false,
-      checkAutomatically: "NEVER",
-      fallbackToCacheTimeout: 0,
+      url: "https://u.expo.dev/19b64256-0d23-4d0c-bfaf-e92dd61a77e5"
+    },
+    runtimeVersion: {
+      policy: "appVersion"
     },
     plugins: [
       ...existingPlugins.filter(
