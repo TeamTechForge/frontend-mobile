@@ -491,7 +491,7 @@ export default function PublicProfileScreen() {
               { value: statsData?.rescuesCompleted !== undefined ? statsData.rescuesCompleted : rescues.length, label: "RESCUES" },
               { value: statsData?.reportsCount !== undefined ? statsData.reportsCount : reports.length, label: "REPORTS" },
               ...((userData.role === "ngo" || userData.role === "vet") && statsData?.totalDonations !== undefined 
-                ? [{ value: `$${statsData.totalDonations}`, label: "DONATIONS" }] 
+                ? [{ value: `Rs. ${statsData.totalDonations}`, label: "DONATIONS" }] 
                 : [])
             ]
         } />
