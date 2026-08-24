@@ -10,7 +10,9 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  KeyboardAvoidingView,
+  Platform
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
@@ -298,6 +300,9 @@ export default function VetProfileSetupScreen() {
     if (!yearsOfExperience.trim()) {
       newErrors.yearsOfExperience = "Years of experience is required";
       valid = false;
+    } else if (isNaN(Number(yearsOfExperience.trim())) || Number(yearsOfExperience.trim()) < 0 || Number(yearsOfExperience.trim()) > 100) {
+      newErrors.yearsOfExperience = "Must be a valid number";
+      valid = false;
     }
 
     if (!licenseDocument) {
@@ -335,6 +340,7 @@ export default function VetProfileSetupScreen() {
       const token = await SecureStore.getItemAsync("authToken");
       if (!token) throw new Error("No authorization token found");
 
+      // Convert a manually entered location into coordinates.
       let finalCoords = coords;
       if (primaryLocation.trim() !== geocodedLocationText.trim()) {
         try {
@@ -395,7 +401,8 @@ export default function VetProfileSetupScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       {/* Header */}
       <View style={styles.header}>
         <BackButton onPress={() => router.replace("/auth/RescuerTypeSelection")} />
@@ -434,7 +441,7 @@ export default function VetProfileSetupScreen() {
 
         <InputField
           label="Primary Location *"
-          placeholder="123 Rescue Way, City, State"
+          placeholder="e.g. 123 Main Street, Colombo 03"
           value={primaryLocation}
           onChangeText={setPrimaryLocation}
           icon="location-outline"
@@ -480,7 +487,7 @@ export default function VetProfileSetupScreen() {
 
         <InputField
           label="Clinic Address *"
-          placeholder="123 Rescue Way, City, State"
+          placeholder="e.g. 123 Main Street, Colombo 03"
           value={clinicAddress}
           onChangeText={setClinicAddress}
           error={errors.clinicAddress}
@@ -488,7 +495,7 @@ export default function VetProfileSetupScreen() {
 
         <InputField
           label="License Number *"
-          placeholder="VET-CD45"
+          placeholder="e.g. VET-CD45"
           value={licenseNumber}
           onChangeText={setLicenseNumber}
           error={errors.licenseNumber}
@@ -583,7 +590,8 @@ export default function VetProfileSetupScreen() {
         disabled={isSubmitting}
       />
       <PayHereSetupGuideModal visible={showPayHereGuide} onClose={() => setShowPayHereGuide(false)} />
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

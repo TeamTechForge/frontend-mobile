@@ -22,6 +22,7 @@ import { colors } from "../../constants/colors.constants";
 import { spacing } from "../../constants/spacing.constants";
 import { typography } from "../../constants/typography.constants";
 import AppButton from "../../components/ui/AppButton";
+import BackButton from "../../components/BackButton";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const uploadToCloudinary = async (imageUri: string) => {
@@ -134,9 +135,7 @@ export default function AddContent() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={10}>
-            <Text style={styles.backIcon}>{"\u2190"}</Text>
-          </Pressable>
+          <BackButton onPress={() => router.back()} />
 
           <Text style={styles.headerTitle}>New Post</Text>
 
@@ -235,21 +234,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F0",
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#ddd",
-  },
-  backIcon: {
-    fontSize: 20,
-    color: "#333",
-    fontWeight: "700" as const,
-  },
+
   headerTitle: {
     flex: 1,
     textAlign: "center",

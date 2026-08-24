@@ -5,6 +5,8 @@ class CallAudioService {
   private incomingRingtone: AudioPlayer | null = null;
   private outgoingRingback: AudioPlayer | null = null;
 
+  private activeMode: "idle" | "incoming" | "outgoing" = "idle";
+
   /**
    * Initializes the audio mode to allow playback in the background and respect silent mode.
    */
@@ -27,11 +29,14 @@ class CallAudioService {
    */
   public async playIncoming() {
     try {
+      this.activeMode = "incoming";
       await this.initAudioMode();
-      await this.stopAll(); // Ensure nothing else is playing
+      await this.stopAllInternal(); // Internal stop that doesn't change activeMode
 
       const asset = Asset.fromModule(require("../assets/sounds/ringtone.wav"));
       await asset.downloadAsync();
+
+      if (this.activeMode !== "incoming") return;
 
       this.incomingRingtone = createAudioPlayer(asset.localUri || asset.uri);
       this.incomingRingtone.loop = true;
@@ -46,11 +51,14 @@ class CallAudioService {
    */
   public async playOutgoing() {
     try {
+      this.activeMode = "outgoing";
       await this.initAudioMode();
-      await this.stopAll(); // Ensure nothing else is playing
+      await this.stopAllInternal(); // Internal stop that doesn't change activeMode
 
       const asset = Asset.fromModule(require("../assets/sounds/ringback.wav"));
       await asset.downloadAsync();
+
+      if (this.activeMode !== "outgoing") return;
 
       this.outgoingRingback = createAudioPlayer(asset.localUri || asset.uri);
       this.outgoingRingback.loop = true;
@@ -94,6 +102,11 @@ class CallAudioService {
    * Stop all active audio playback
    */
   public async stopAll() {
+    this.activeMode = "idle";
+    await this.stopAllInternal();
+  }
+
+  private async stopAllInternal() {
     await this.stopIncoming();
     await this.stopOutgoing();
   }

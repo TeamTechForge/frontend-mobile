@@ -413,10 +413,17 @@ export default function PublicProfileScreen() {
             )}
           </View>
 
-          {profileData?.location ? (
+          {userData.role === "ngo" && profileData?.location ? (
             <View style={styles.locationContainer}>
               <Ionicons name="location-outline" size={14} color="#6B7280" />
               <Text style={styles.location}>{profileData.location}</Text>
+            </View>
+          ) : null}
+
+          {userData.role === "vet" && profileData?.clinicAddress ? (
+            <View style={styles.locationContainer}>
+              <Ionicons name="location-outline" size={14} color="#6B7280" />
+              <Text style={styles.location}>{profileData.clinicAddress}</Text>
             </View>
           ) : null}
 
@@ -424,20 +431,12 @@ export default function PublicProfileScreen() {
           {userData.role === "volunteer" && profileData?.serviceArea ? (
             <Text style={styles.metaInfo}>Service Area: {profileData.serviceArea}</Text>
           ) : null}
-          {userData.role === "vet" && (profileData?.clinicName || profileData?.specialization) ? (
+          {userData.role === "vet" && profileData?.clinicName ? (
             <View style={styles.tagsContainer}>
-              {profileData?.clinicName && (
-                <View style={styles.tagBadge}>
-                  <Ionicons name="business-outline" size={12} color="#4B5563" />
-                  <Text style={styles.tagText} numberOfLines={1}>
-                    {profileData.clinicName}
-                  </Text>
-                </View>
-              )}
-              <View style={[styles.tagBadge, { backgroundColor: "#F3E8FF" }]}>
-                <Ionicons name="medkit-outline" size={12} color="#7E22CE" />
-                <Text style={[styles.tagText, { color: "#7E22CE" }]} numberOfLines={1}>
-                  {profileData?.specialization || "General"}
+              <View style={styles.tagBadge}>
+                <Ionicons name="business-outline" size={12} color="#4B5563" />
+                <Text style={styles.tagText} numberOfLines={1}>
+                  {profileData.clinicName}
                 </Text>
               </View>
             </View>

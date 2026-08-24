@@ -208,147 +208,147 @@ export default function RegisterScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-      <Image
-        source={require("../../assets/images/signupimg.jpg")}
-        style={styles.topImage}
-      />
-
-      <View style={styles.card}>
-        <Text style={styles.title}>Create your StrayCare account</Text>
-
-        <Text style={styles.subtitle}>
-          Join our community and help save lives
-        </Text>
-
-        <Text style={styles.label}>
-          Name <Text style={{ color: "red" }}>*</Text>
-        </Text>
-        <InputField
-          placeholder="John Doe"
-          value={name}
-          onChangeText={setName}
-          editable={!isLoading}
+        <Image
+          source={require("../../assets/images/signupimg.jpg")}
+          style={styles.topImage}
         />
-        {errors.name && <Text style={styles.error}>{errors.name}</Text>}
 
-        <Text style={styles.label}>
-          Email Address <Text style={{ color: "red" }}>*</Text>
-        </Text>
-        <InputField
-          placeholder="Johndoe@gmail.com"
-          value={email}
-          onChangeText={setEmail}
-          editable={!isLoading}
-        />
-        {errors.email && <Text style={styles.error}>{errors.email}</Text>}
+        <View style={styles.card}>
+          <Text style={styles.title}>Create your StrayCare account</Text>
 
-        <Text style={styles.label}>
-          Phone Number <Text style={{ color: "red" }}>*</Text>
-        </Text>
-        <InputField
-          placeholder="e.g. 0771234567"
-          value={phone}
-          onChangeText={setPhone}
-          editable={!isLoading}
-        />
-        {errors.phone && <Text style={styles.error}>{errors.phone}</Text>}
-
-        <Text style={styles.label}>
-          Password <Text style={{ color: "red" }}>*</Text>
-        </Text>
-        <InputField
-          placeholder="********"
-          value={password}
-          onChangeText={setPassword}
-          secure
-          editable={!isLoading}
-        />
-        {errors.password && <Text style={styles.error}>{errors.password}</Text>}
-
-        <Text style={styles.label}>
-          Confirm Password <Text style={{ color: "red" }}>*</Text>
-        </Text>
-        <InputField
-          placeholder="********"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secure
-          editable={!isLoading}
-        />
-        {errors.confirmPassword && (
-          <Text style={styles.error}>{errors.confirmPassword}</Text>
-        )}
-
-        <TouchableOpacity
-          style={styles.termsContainer}
-          onPress={() => setAgree(!agree)}
-          disabled={isLoading}
-        >
-          <Ionicons
-            name={agree ? "checkbox" : "square-outline"}
-            size={20}
-            color={agree ? BRAND_COLOR : "#999"}
-          />
-          <Text style={styles.termsText}>
-            I agree to the{" "}
-            <Text
-              style={{ color: BRAND_COLOR }}
-              onPress={() =>
-                router.push({
-                  pathname: "/auth/TermsPrivacyScreen",
-                  params: { name, email, phone, password, confirmPassword }
-                })
-              }
-            >
-              Terms & Privacy Policy
-            </Text>
+          <Text style={styles.subtitle}>
+            Join our community and help save lives
           </Text>
-        </TouchableOpacity>
 
-        {errors.terms && <Text style={styles.error}>{errors.terms}</Text>}
+          <Text style={styles.label}>
+            Name <Text style={{ color: "red" }}>*</Text>
+          </Text>
+          <InputField
+            placeholder="Kasun Perera"
+            value={name}
+            onChangeText={setName}
+            editable={!isLoading}
+          />
+          {errors.name && <Text style={styles.error}>{errors.name}</Text>}
 
-        <PrimaryButton
-          title={isLoading ? "Creating Account..." : "Create Account"}
-          onPress={handleRegister}
-          disabled={isLoading}
-        />
+          <Text style={styles.label}>
+            Email Address <Text style={{ color: "red" }}>*</Text>
+          </Text>
+          <InputField
+            placeholder="Kasunperera@gmail.com"
+            value={email}
+            onChangeText={setEmail}
+            editable={!isLoading}
+          />
+          {errors.email && <Text style={styles.error}>{errors.email}</Text>}
 
-        <View style={styles.dividerContainer}>
-          <View style={styles.line} />
-          <Text style={styles.orText}>OR</Text>
-          <View style={styles.line} />
-        </View>
+          <Text style={styles.label}>
+            Phone Number <Text style={{ color: "red" }}>*</Text>
+          </Text>
+          <InputField
+            placeholder="e.g. 0771234567"
+            value={phone}
+            onChangeText={setPhone}
+            editable={!isLoading}
+          />
+          {errors.phone && <Text style={styles.error}>{errors.phone}</Text>}
 
-        {!isExpoGo && (
+          <Text style={styles.label}>
+            Password <Text style={{ color: "red" }}>*</Text>
+          </Text>
+          <InputField
+            placeholder="********"
+            value={password}
+            onChangeText={setPassword}
+            secure
+            editable={!isLoading}
+          />
+          {errors.password && <Text style={styles.error}>{errors.password}</Text>}
+
+          <Text style={styles.label}>
+            Confirm Password <Text style={{ color: "red" }}>*</Text>
+          </Text>
+          <InputField
+            placeholder="********"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secure
+            editable={!isLoading}
+          />
+          {errors.confirmPassword && (
+            <Text style={styles.error}>{errors.confirmPassword}</Text>
+          )}
+
           <TouchableOpacity
-            style={[styles.googleButton, (isLoading || isGoogleLoading || !isGoogleReady) && { opacity: 0.6 }]}
-            onPress={() => promptAsync()}
-            disabled={isLoading || isGoogleLoading || !isGoogleReady}
+            style={styles.termsContainer}
+            onPress={() => setAgree(!agree)}
+            disabled={isLoading}
           >
-            {isGoogleLoading ? (
-              <ActivityIndicator size="small" color="#DB4437" style={{ marginRight: 8 }} />
-            ) : (
-              <MaterialCommunityIcons
-                name="google"
-                size={18}
-                color="#DB4437"
-                style={{ marginRight: 8 }}
-              />
-            )}
-            <Text style={styles.googleText}>
-              {isGoogleLoading ? "Signing in..." : "Continue with Google"}
+            <Ionicons
+              name={agree ? "checkbox" : "square-outline"}
+              size={20}
+              color={agree ? BRAND_COLOR : "#999"}
+            />
+            <Text style={styles.termsText}>
+              I agree to the{" "}
+              <Text
+                style={{ color: BRAND_COLOR }}
+                onPress={() =>
+                  router.push({
+                    pathname: "/auth/TermsPrivacyScreen",
+                    params: { name, email, phone, password, confirmPassword }
+                  })
+                }
+              >
+                Terms & Privacy Policy
+              </Text>
             </Text>
           </TouchableOpacity>
-        )}
 
-        <View style={styles.loginContainer}>
-          <Text style={{ fontSize: 13 }}>Already have an account?</Text>
-          <TouchableOpacity onPress={() => router.push("/auth/Login")} disabled={isLoading}>
-            <Text style={styles.loginText}> Log in</Text>
-          </TouchableOpacity>
+          {errors.terms && <Text style={styles.error}>{errors.terms}</Text>}
+
+          <PrimaryButton
+            title={isLoading ? "Creating Account..." : "Create Account"}
+            onPress={handleRegister}
+            disabled={isLoading}
+          />
+
+          <View style={styles.dividerContainer}>
+            <View style={styles.line} />
+            <Text style={styles.orText}>OR</Text>
+            <View style={styles.line} />
+          </View>
+
+          {!isExpoGo && (
+            <TouchableOpacity
+              style={[styles.googleButton, (isLoading || isGoogleLoading || !isGoogleReady) && { opacity: 0.6 }]}
+              onPress={() => promptAsync()}
+              disabled={isLoading || isGoogleLoading || !isGoogleReady}
+            >
+              {isGoogleLoading ? (
+                <ActivityIndicator size="small" color="#DB4437" style={{ marginRight: 8 }} />
+              ) : (
+                <MaterialCommunityIcons
+                  name="google"
+                  size={18}
+                  color="#DB4437"
+                  style={{ marginRight: 8 }}
+                />
+              )}
+              <Text style={styles.googleText}>
+                {isGoogleLoading ? "Signing in..." : "Continue with Google"}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          <View style={styles.loginContainer}>
+            <Text style={{ fontSize: 13 }}>Already have an account?</Text>
+            <TouchableOpacity onPress={() => router.push("/auth/Login")} disabled={isLoading}>
+              <Text style={styles.loginText}> Log in</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
 
       <CustomAlertModal
         visible={isAccountExistsVisible}

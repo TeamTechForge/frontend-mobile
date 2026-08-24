@@ -90,7 +90,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       const list: Notification[] = Array.isArray(data) ? data : [];
       setNotifications(list);
 
-      // Trigger local OS banner notification for newly arrived unread notifications
+      // Trigger local OS banner notification for newly arrived unread notifications.
+      // Since we removed the re-triggering logic in _layout.tsx, this is safe and will only happen once.
       if (initialFetchDoneRef.current) {
         list.forEach((notif) => {
           const id = String(notif._id || "");
