@@ -61,6 +61,11 @@ export default function ForgotPasswordScreen() {
       return;
     }
 
+    if (!/^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,15}$/.test(newPassword)) {
+      Alert.alert("Password must be 8-15 chars, with at least 1 uppercase and 1 symbol");
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/auth/reset-password`, {

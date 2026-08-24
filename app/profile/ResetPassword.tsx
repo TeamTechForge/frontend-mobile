@@ -41,8 +41,8 @@ export default function ResetPasswordScreen() {
     if (!newPassword.trim()) {
       newErrors.newPassword = "New password is required";
       valid = false;
-    } else if (newPassword.length < 6) {
-      newErrors.newPassword = "Password must be at least 6 characters";
+    } else if (!/^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,15}$/.test(newPassword)) {
+      newErrors.newPassword = "Must be 8-15 chars, with at least 1 uppercase and 1 symbol";
       valid = false;
     }
 

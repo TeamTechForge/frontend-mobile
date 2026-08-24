@@ -100,8 +100,8 @@ export default function RegisterScreen() {
 
     if (!password) {
       newErrors.password = "Password is required";
-    } else if (password.length < 6) {
-      newErrors.password = "Minimum 6 characters";
+    } else if (!/^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,15}$/.test(password)) {
+      newErrors.password = "Must be 8-15 chars, with at least 1 uppercase and 1 symbol";
     }
 
     if (confirmPassword !== password) {
